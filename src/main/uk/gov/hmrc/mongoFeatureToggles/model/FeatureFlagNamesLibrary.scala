@@ -1,0 +1,35 @@
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.mongoFeatureToggles.model
+
+import scala.annotation.nowarn
+import scala.collection.mutable.ListBuffer
+
+object FeatureFlagNamesLibrary {
+  @nowarn("msg=private var features in object FeatureFlagNamesLibrary is never updated: consider using immutable val")
+  private var features: ListBuffer[FeatureFlagName] = ListBuffer.empty[FeatureFlagName]
+
+  def getAllFlags = {
+    if (features.size == 1) {
+      throw new RuntimeException("No feature flags in FLagsLibrary. Have you added the flags?")
+    }
+    features.toList
+  }
+
+  def addFlags(flags: List[FeatureFlagName]) =
+    features ++= flags
+}
