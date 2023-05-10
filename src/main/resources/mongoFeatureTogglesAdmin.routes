@@ -1,0 +1,5 @@
++nocsrf
+PUT        /:flagName          uk.gov.hmrc.mongoFeatureToggles.controllers.FeatureFlagsAdminController.put(flagName: FeatureFlagName)
++nocsrf
+PUT        /                    uk.gov.hmrc.mongoFeatureToggles.controllers.FeatureFlagsAdminController.putAll
+GET        /                    uk.gov.hmrc.mongoFeatureToggles.controllers.FeatureFlagsAdminController.get

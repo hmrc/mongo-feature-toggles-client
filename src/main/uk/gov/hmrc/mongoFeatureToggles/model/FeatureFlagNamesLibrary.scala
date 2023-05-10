@@ -23,13 +23,14 @@ object FeatureFlagNamesLibrary {
   @nowarn("msg=private var features in object FeatureFlagNamesLibrary is never updated: consider using immutable val")
   private var features: ListBuffer[FeatureFlagName] = ListBuffer.empty[FeatureFlagName]
 
-  def getAllFlags = {
-    if (features.size == 1) {
+  final def getAllFlags = {
+    println("TTTTT " + features)
+    if (features.isEmpty) {
       throw new RuntimeException("No feature flags in FLagsLibrary. Have you added the flags?")
     }
     features.toList
   }
 
-  def addFlags(flags: List[FeatureFlagName]) =
+  final def addFlags(flags: List[FeatureFlagName]) =
     features ++= flags
 }

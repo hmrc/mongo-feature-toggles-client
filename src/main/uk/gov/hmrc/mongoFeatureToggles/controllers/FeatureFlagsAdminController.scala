@@ -17,10 +17,11 @@
 package uk.gov.hmrc.mongoFeatureToggles.controllers
 
 import play.api.libs.json.{JsBoolean, Json}
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.mongoFeatureToggles.actions.InternalAuthAction
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import uk.gov.hmrc.mongoFeatureToggles.internal.actions.InternalAuthAction
+import uk.gov.hmrc.mongoFeatureToggles.internal.services.FeatureFlagService
 import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName}
-import uk.gov.hmrc.mongoFeatureToggles.services.FeatureFlagService
+import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,9 +29,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class FeatureFlagsAdminController @Inject() (
   val auth: InternalAuthAction,
   featureFlagService: FeatureFlagService,
-  cc: ControllerComponents
+  mcc: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
-    extends AbstractController(cc) {
+    extends FrontendController(mcc) {
 
   def get: Action[AnyContent] = auth().async {
     featureFlagService.getAll

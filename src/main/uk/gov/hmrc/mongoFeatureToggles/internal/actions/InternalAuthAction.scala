@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mongoFeatureToggles.actions
+package uk.gov.hmrc.mongoFeatureToggles.internal.actions
 
 import com.google.inject.Inject
 import play.api.Logging
 import uk.gov.hmrc.internalauth.client.Predicate.Permission
 import uk.gov.hmrc.internalauth.client._
-import uk.gov.hmrc.mongoFeatureToggles.config.AppConfig
+import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
 
 import scala.concurrent.ExecutionContext
 
-class InternalAuthAction @Inject() (
+private[mongoFeatureToggles] class InternalAuthAction @Inject() (
   appConfig: AppConfig,
   internalAuth: BackendAuthComponents
 )(implicit

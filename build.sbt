@@ -23,6 +23,8 @@ val libName = "mongo-feature-toggles-client"
 val scala2_13 = "2.13.8"
 
 lazy val library = Project(s"$libName-play-28", file("."))
+  .enablePlugins(PlayScala)
+  .disablePlugins(PlayLayoutPlugin)
   .configs(IntegrationTest)
   .settings(integrationTestSettings(): _*)
   .settings(IntegrationTest / unmanagedSourceDirectories  := (IntegrationTest / baseDirectory)(base => Seq(
@@ -40,9 +42,13 @@ lazy val library = Project(s"$libName-play-28", file("."))
     scalafmtOnCompile := true,
     scalacOptions ++= Seq(
       "-feature",
-      "-Werror"
+      "-Werror",
+      "-Wconf:cat=unused&src=.*RoutesPrefix\\.scala:s",
+      "-Wconf:cat=unused&src=.*Routes\\.scala:s",
+      "-Wconf:cat=unused&src=.*ReverseRoutes\\.scala:s"
     ),
     resolvers += Resolver.typesafeRepo("releases"),
     Test / fork := true //Required to prevent https://github.com/sbt/sbt/issues/4609,
   )
+  .settings(routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"))
   .settings(ScoverageSettings())

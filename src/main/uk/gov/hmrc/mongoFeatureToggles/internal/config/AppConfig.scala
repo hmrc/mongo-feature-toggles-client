@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mongoFeatureToggles.config
+package uk.gov.hmrc.mongoFeatureToggles.internal.config
 
 /*
  * Copyright 2023 HM Revenue & Customs
@@ -37,7 +37,7 @@ import play.api.Configuration
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class AppConfig @Inject() (configuration: Configuration) {
+private[internal] class AppConfig @Inject() (configuration: Configuration) {
   val ehcacheTtlInSeconds: Int =
     configuration.getOptional[Int]("mongo-feature-toggles-client.cacheTtlInSeconds").getOrElse(5)
 

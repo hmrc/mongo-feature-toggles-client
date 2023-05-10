@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mongoFeatureToggles.model
+package uk.gov.hmrc.mongoFeatureToggles.internal.model
 
-import play.api.libs.json._
+import uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName
 
-case class FeatureFlag(name: FeatureFlagName, isEnabled: Boolean, description: Option[String] = None)
-
-object FeatureFlag {
-  implicit final val format: OFormat[FeatureFlag] = Json.format[FeatureFlag]
+private[internal] case class DeletedToggle(name: String) extends FeatureFlagName {
+  override def toString: String = name
 }
