@@ -5,6 +5,11 @@ This library is a client to use mongo as storage for feature toggles.
 
 ## How it works
 
+* Add the library
+```scala
+"uk.gov.hmrc" %% "mongo-feature-toggles-client" % "0.1.0"
+```
+
 * Create a toggle
 
 Create a case object extending the FeatureFlagName trait
@@ -39,6 +44,16 @@ class HmrcModule extends Module {
 
 ```text
 play.modules.enabled += "config.HmrcModule"
+```
+
+* Add the additional admin routes in admin.routes
+```text 
+-> /featureFlags mongoFeatureTogglesAdmin.Routes
+```
+
+* Add the additional test-only routes in testOnlyDoNotUseInAppConf.routes
+```text 
+-> /<rootPath> mongoFeatureTogglesTestOnly.Routes
 ```
 
 * Read the state of a toggle
