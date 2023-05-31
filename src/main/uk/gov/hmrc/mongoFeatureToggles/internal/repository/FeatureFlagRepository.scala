@@ -64,7 +64,9 @@ private[internal] class FeatureFlagRepository @Inject() (
       collection
         .find(Filters.equal("name", name.toString))
         .headOption()
-        .map(_.map(flag => model.FeatureFlag(JsString(flag.name).as[FeatureFlagName], flag.isEnabled, flag.description)))
+        .map(
+          _.map(flag => model.FeatureFlag(JsString(flag.name).as[FeatureFlagName], flag.isEnabled, flag.description))
+        )
     )
 
   def getAllFeatureFlags: Future[List[FeatureFlag]] =
@@ -73,7 +75,9 @@ private[internal] class FeatureFlagRepository @Inject() (
         .find()
         .toFuture()
         .map(
-          _.toList.map(flag => model.FeatureFlag(JsString(flag.name).as[FeatureFlagName], flag.isEnabled, flag.description))
+          _.toList.map(flag =>
+            model.FeatureFlag(JsString(flag.name).as[FeatureFlagName], flag.isEnabled, flag.description)
+          )
         )
     )
 
