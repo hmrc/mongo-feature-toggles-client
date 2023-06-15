@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mongoFeatureToggles.model
+package uk.gov.hmrc.mongoFeatureToggles.testUtils
 
-import scala.collection.mutable.ListBuffer
+import uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName
 
-object FeatureFlagNamesLibrary extends FeatureFlagNamesLibrary
+case object TestToggleA extends FeatureFlagName {
+  override val name: String                = "test-toggle-a"
+  override val description: Option[String] = Some("Description A")
+}
 
-trait FeatureFlagNamesLibrary {
-  private var features: ListBuffer[FeatureFlagName] = ListBuffer.empty[FeatureFlagName]
-
-  final def getAllFlags = {
-    if (features.isEmpty) {
-      throw new RuntimeException("No feature flags in FLagsLibrary. Have you added the flags?")
-    }
-    features.toList
-  }
-
-  final def addFlags(flags: List[FeatureFlagName]) =
-    features = flags.to(ListBuffer)
+case object TestToggleB extends FeatureFlagName {
+  override val name: String                = "test-toggle-b"
+  override val description: Option[String] = Some("Description B")
 }

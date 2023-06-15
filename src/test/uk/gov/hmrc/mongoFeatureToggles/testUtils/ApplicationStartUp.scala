@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mongoFeatureToggles.model
+package uk.gov.hmrc.mongoFeatureToggles.testUtils
 
-import scala.collection.mutable.ListBuffer
+import uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagNamesLibrary
 
-object FeatureFlagNamesLibrary extends FeatureFlagNamesLibrary
+import javax.inject.Singleton
 
-trait FeatureFlagNamesLibrary {
-  private var features: ListBuffer[FeatureFlagName] = ListBuffer.empty[FeatureFlagName]
-
-  final def getAllFlags = {
-    if (features.isEmpty) {
-      throw new RuntimeException("No feature flags in FLagsLibrary. Have you added the flags?")
-    }
-    features.toList
-  }
-
-  final def addFlags(flags: List[FeatureFlagName]) =
-    features = flags.to(ListBuffer)
+@Singleton
+class ApplicationStartUp {
+  FeatureFlagNamesLibrary.addFlags(List(TestToggleA, TestToggleB))
 }

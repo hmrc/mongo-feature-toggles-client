@@ -32,6 +32,7 @@ lazy val library = Project(s"$libName-play-28", file("."))
   )).value)
   .settings(
     Compile / unmanagedSourceDirectories   += baseDirectory.value / "/src/main",
+    Test / unmanagedSourceDirectories   += baseDirectory.value / "/src/test",
     name := libName,
     scalaVersion := scala2_13,
     organization := "uk.gov.hmrc",

@@ -12,8 +12,10 @@ private object BuildDependencies {
   )
 
   val test: Seq[ModuleID] = Seq(
-      "uk.gov.hmrc.mongo"       %% s"hmrc-mongo-test-$playVersion" % hmrcMongoVersion
-    ).map(_ % "test, it")
+    "uk.gov.hmrc"       %% s"bootstrap-test-$playVersion" % "7.13.0",
+    "uk.gov.hmrc.mongo"       %% s"hmrc-mongo-test-$playVersion" % hmrcMongoVersion,
+    "org.mockito"             %% "mockito-scala-scalatest"       % "1.17.12"
+  ).map(_ % "test, it")
 
 
 

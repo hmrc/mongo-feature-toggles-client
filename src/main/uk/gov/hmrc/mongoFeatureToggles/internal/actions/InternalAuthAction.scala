@@ -29,7 +29,7 @@ private[mongoFeatureToggles] class InternalAuthAction @Inject() (
   internalAuth: BackendAuthComponents
 )(implicit
   val executionContext: ExecutionContext
-) extends Logging {
+) {
 
   private val permission: Permission =
     Permission(

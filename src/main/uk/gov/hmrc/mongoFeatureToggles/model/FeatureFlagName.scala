@@ -36,7 +36,7 @@ trait FeatureFlagName {
 }
 
 object FeatureFlagName {
-  implicit final val writes: Writes[FeatureFlagName] = (o: FeatureFlagName) => JsString(o.toString)
+  implicit final val writes: Writes[FeatureFlagName] = (o: FeatureFlagName) => JsString(o.name)
 
   implicit final val reads: Reads[FeatureFlagName]    = new Reads[FeatureFlagName] {
     override def reads(json: JsValue): JsResult[FeatureFlagName] =
@@ -59,6 +59,6 @@ object FeatureFlagName {
       }
 
     override def unbind(key: String, value: FeatureFlagName): String =
-      value.toString
+      value.name
   }
 }
