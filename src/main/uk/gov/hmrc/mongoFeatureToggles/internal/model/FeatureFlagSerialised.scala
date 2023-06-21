@@ -18,8 +18,12 @@ package uk.gov.hmrc.mongoFeatureToggles.internal.model
 
 import play.api.libs.json.{Format, Json}
 
-private[internal] case class FeatureFlagSerialised(name: String, isEnabled: Boolean, description: Option[String])
+private[mongoFeatureToggles] case class FeatureFlagSerialised(
+  name: String,
+  isEnabled: Boolean,
+  description: Option[String]
+)
 
-private[internal] object FeatureFlagSerialised {
+private[mongoFeatureToggles] object FeatureFlagSerialised {
   implicit val formats: Format[FeatureFlagSerialised] = Json.format[FeatureFlagSerialised]
 }

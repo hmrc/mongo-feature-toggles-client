@@ -17,8 +17,8 @@
 package uk.gov.hmrc.mongoFeatureToggles.controllers.testOnly
 
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import uk.gov.hmrc.mongoFeatureToggles.internal.services.FeatureFlagService
 import uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName
+import uk.gov.hmrc.mongoFeatureToggles.services.FeatureFlagService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
 
 import javax.inject.{Inject, Singleton}

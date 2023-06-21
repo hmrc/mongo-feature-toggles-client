@@ -18,21 +18,11 @@ package uk.gov.hmrc.mongoFeatureToggles.model
 
 import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue, Reads, Writes}
 import play.api.mvc.PathBindable
-import uk.gov.hmrc.mongoFeatureToggles.internal.model.Injector.playInjector
-import uk.gov.hmrc.mongoFeatureToggles.internal.services.FeatureFlagService
-
-import scala.concurrent.Future
 
 trait FeatureFlagName {
   val description: Option[String] = None
   val name: String
   override def toString: String   = name
-
-  private lazy val featureFlagService = playInjector.instanceOf[FeatureFlagService]
-
-  def get: Future[FeatureFlag] = featureFlagService.get(this)
-
-  def set(isEnabled: Boolean): Future[Boolean] = featureFlagService.set(this, isEnabled)
 }
 
 object FeatureFlagName {

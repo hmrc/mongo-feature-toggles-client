@@ -74,8 +74,9 @@ PertaxBackendToggle.set(true)
 ```
 
 ### Write the state of multiple toggles simultaneously
+
 ```scala
-import uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagImplicits.ListFeatureFlagSetAll
+import.ListFeatureFlagSetAll
 
 List(FeatureFlag(Toggle1, true), FeatureFlag(Toggle2, false)).setAll()
 ```

@@ -32,7 +32,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-private[internal] class FeatureFlagRepository @Inject() (
+private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
   val mongoComponent: MongoComponent
 )(implicit
   ec: ExecutionContext

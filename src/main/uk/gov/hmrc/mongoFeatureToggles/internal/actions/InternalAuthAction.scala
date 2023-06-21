@@ -17,7 +17,6 @@
 package uk.gov.hmrc.mongoFeatureToggles.internal.actions
 
 import com.google.inject.Inject
-import play.api.Logging
 import uk.gov.hmrc.internalauth.client.Predicate.Permission
 import uk.gov.hmrc.internalauth.client._
 import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
@@ -41,5 +40,5 @@ private[mongoFeatureToggles] class InternalAuthAction @Inject() (
     )
 
   def apply() =
-    internalAuth.authorizedAction(permission, Retrieval.username)
+    internalAuth.authorizedAction(permission)
 }

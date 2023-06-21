@@ -37,7 +37,7 @@ import play.api.Configuration
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-private[internal] class AppConfig @Inject() (configuration: Configuration) {
+private[mongoFeatureToggles] class AppConfig @Inject() (configuration: Configuration) {
   val ehcacheTtlInSeconds: Int =
     configuration.getOptional[Int]("mongo-feature-toggles-client.cacheTtlInSeconds").getOrElse(5)
 

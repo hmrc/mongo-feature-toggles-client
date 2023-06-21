@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mongoFeatureToggles.internal.services
+package uk.gov.hmrc.mongoFeatureToggles.services
 
 import play.api.Logging
 import play.api.cache.AsyncCacheApi
@@ -28,7 +28,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration, SECONDS => Seconds}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-private[mongoFeatureToggles] class FeatureFlagService @Inject() (
+final class FeatureFlagService @Inject() (
   appConfig: AppConfig,
   featureFlagRepository: FeatureFlagRepository,
   cache: AsyncCacheApi

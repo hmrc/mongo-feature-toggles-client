@@ -17,17 +17,17 @@
 package uk.gov.hmrc.mongoFeatureToggles.controllers
 
 import play.api.libs.json.{JsBoolean, Json}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import uk.gov.hmrc.mongoFeatureToggles.internal.actions.InternalAuthAction
-import uk.gov.hmrc.mongoFeatureToggles.internal.services.FeatureFlagService
 import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName}
+import uk.gov.hmrc.mongoFeatureToggles.services.FeatureFlagService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class FeatureFlagsAdminController @Inject() (
-  val auth: InternalAuthAction,
+  auth: InternalAuthAction,
   featureFlagService: FeatureFlagService,
   mcc: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
@@ -45,16 +45,17 @@ class FeatureFlagsAdminController @Inject() (
           .set(flagName, enabled)
           .map(_ => NoContent)
       case _                        =>
-        Future.successful(BadRequest)
+        Future.successful(BadRequest("Request body was invalid"))
     }
   }
 
   def putAll: Action[AnyContent] = auth().async { request =>
-    val flags = request.body.asJson
-      .map(_.as[Seq[FeatureFlag]])
-      .getOrElse(Seq.empty)
-      .map(flag => (flag.name -> flag.isEnabled))
-      .toMap
-    featureFlagService.setAll(flags).map(_ => NoContent)
+    request.body.asJson.fold(Future.successful(BadRequest("Request body was invalid"))) { json =>
+      val flags = json
+        .as[Seq[FeatureFlag]]
+        .map(flag => (flag.name -> flag.isEnabled))
+        .toMap
+      featureFlagService.setAll(flags).map(_ => NoContent)
+    }
   }
 }

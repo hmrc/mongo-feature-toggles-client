@@ -18,6 +18,6 @@ package uk.gov.hmrc.mongoFeatureToggles.internal.model
 
 import uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName
 
-private[internal] case class DeletedToggle(name: String) extends FeatureFlagName {
+private[mongoFeatureToggles] case class DeletedToggle(name: String) extends FeatureFlagName {
   override def toString: String = name
 }

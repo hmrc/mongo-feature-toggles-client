@@ -23,6 +23,7 @@ import play.api.cache.AsyncCacheApi
 import play.api.inject.bind
 import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
 import uk.gov.hmrc.mongoFeatureToggles.internal.repository.FeatureFlagRepository
+import uk.gov.hmrc.mongoFeatureToggles.services.FeatureFlagService
 import uk.gov.hmrc.mongoFeatureToggles.testUtils.{BaseSpec, TestToggleA, TestToggleB}
 
 import scala.concurrent.Future

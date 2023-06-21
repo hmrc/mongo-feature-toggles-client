@@ -23,9 +23,11 @@ import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
 import uk.gov.hmrc.mongoFeatureToggles.internal.model.DeletedToggle
 import uk.gov.hmrc.mongoFeatureToggles.internal.repository.FeatureFlagRepository
 import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName, FeatureFlagNamesLibrary}
+import uk.gov.hmrc.mongoFeatureToggles.services.FeatureFlagService
 import uk.gov.hmrc.mongoFeatureToggles.testUtils.{BaseSpec, TestToggleA, TestToggleB}
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class FeatureFlagServiceWithCacheSpec extends BaseSpec {
 

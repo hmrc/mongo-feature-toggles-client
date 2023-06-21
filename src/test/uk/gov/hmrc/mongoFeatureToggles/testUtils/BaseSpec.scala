@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.mongoFeatureToggles.testUtils
 
+import org.mockito.ArgumentMatchers.any
 import org.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, Suite}
 import org.scalatest.concurrent.{PatienceConfiguration, ScalaFutures}
@@ -24,10 +25,16 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.Injecting
+import play.api.test.{Helpers, Injecting}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.internalauth.client.Predicate.Permission
+import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, IAAction, Resource, ResourceLocation, ResourceType}
+import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+import play.api.inject.bind
+import play.api.test.Helpers.stubControllerComponents
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait BaseSpec
     extends AnyWordSpec
@@ -50,10 +57,18 @@ trait BaseSpec
 
   protected def localGuiceApplicationBuilder(): GuiceApplicationBuilder =
     GuiceApplicationBuilder()
+      .overrides(
+        bind[BackendAuthComponents].toInstance(stubBackendAuthComponents)
+      )
       .configure(configValues)
 
   override implicit lazy val app: Application = localGuiceApplicationBuilder().build()
 
-  implicit lazy val ec = inject[ExecutionContext]
+  val expectedPredicate =
+    Permission(Resource(ResourceType("ddcn-live-admin-frontend"), ResourceLocation("*")), IAAction("ADMIN"))
+
+  lazy val mockStubBehaviour         = mock[StubBehaviour]
+  lazy val stubBackendAuthComponents =
+    BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), implicitly)
 
 }
