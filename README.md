@@ -60,25 +60,27 @@ play.modules.enabled += "config.HmrcModule"
 ```
 
 ### Read the state of a toggle
-The method `get` from `FeatureFlagName` gets the state of the toggle.
+Inject the `FeatureFlagService` service and use the `get` method
 
 ```scala
-PertaxBackendToggle.get
+FeatureFlagService.get(PertaxBackendToggle)
 ```
 
 ### Write a new state of a toggle
-The method `set` from `FeatureFlagName` sets a new state of the toggle.
+Inject the `FeatureFlagService` service and use the `set` method
 
 ```scala
-PertaxBackendToggle.set(true)
+FeatureFlagService.set(PertaxBackendToggle, true)
 ```
 
 ### Write the state of multiple toggles simultaneously
+Inject the `FeatureFlagService` service and use the `setAll` method
 
 ```scala
-import.ListFeatureFlagSetAll
-
-List(FeatureFlag(Toggle1, true), FeatureFlag(Toggle2, false)).setAll()
+FeatureFlagService.set(Map(
+  PertaxBackendToggle -> true,
+  AnOtherToggle -> false
+))
 ```
 
 ### License
