@@ -43,7 +43,7 @@ lazy val library = Project(s"$libName-play-28", file("."))
     scalafmtOnCompile := true,
     scalacOptions ++= Seq(
       "-feature",
-      //"-Werror",
+      "-Werror",
       "-Wconf:cat=unused&src=.*RoutesPrefix\\.scala:s",
       "-Wconf:cat=unused&src=.*Routes\\.scala:s",
       "-Wconf:cat=unused&src=.*ReverseRoutes\\.scala:s"
