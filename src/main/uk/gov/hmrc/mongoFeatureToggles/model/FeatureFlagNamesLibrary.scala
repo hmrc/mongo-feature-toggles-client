@@ -25,7 +25,7 @@ trait FeatureFlagNamesLibrary {
 
   final def getAllFlags = {
     if (features.isEmpty) {
-      throw new RuntimeException("No feature flags in FLagsLibrary. Have you added the flags?")
+      throw new RuntimeException("No feature flags in FeatureFlagNamesLibrary. Have you added the flags?")
     }
     features.toList
   }

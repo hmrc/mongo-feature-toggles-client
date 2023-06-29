@@ -33,7 +33,7 @@ class FeatureFlagNamesLibrarySpec extends BaseSpec {
       val result = intercept[RuntimeException] {
         TestLibrary.getAllFlags
       }
-      result.getMessage mustBe "No feature flags in FLagsLibrary. Have you added the flags?"
+      result.getMessage mustBe "No feature flags in FeatureFlagNamesLibrary. Have you added the flags?"
     }
   }
 
