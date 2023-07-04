@@ -1,0 +1,2 @@
+PUT /test-only/setFlag/:flagName/:isEnabled  uk.gov.hmrc.mongoFeatureToggles.controllers.testOnly.FeatureFlagsTestOnlyController.setFlag(flagName: FeatureFlagName, isEnabled: Boolean)
+
