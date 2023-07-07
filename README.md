@@ -15,6 +15,13 @@ Note the library is using transaction in mongo which requires mongo to be run as
 If you see the error `com.mongodb.MongoClientException, with message: This MongoDB deployment does not support retryable writes. Please add retryWrites=false to your connection string`
 when running tests, your mongo is not running as a cluster.
 
+### Add internal auth binding
+The library uses [internal-auth-client](https://github.com/hmrc/internal-auth-client). 
+You will need to add the following binding to your ```application.conf```, unless your service already uses the ```internal-auth-client```, in which case this binding will already exist.
+```scala
+play.modules.enabled += "uk.gov.hmrc.internalauth.client.modules.InternalAuthModule"
+```
+
 ### Create a toggle
 Create a case object extending the FeatureFlagName trait
 
