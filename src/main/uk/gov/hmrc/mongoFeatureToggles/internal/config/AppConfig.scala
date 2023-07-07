@@ -23,8 +23,12 @@ import javax.inject.{Inject, Singleton}
 @Singleton
 private[mongoFeatureToggles] class AppConfig @Inject() (configuration: Configuration) {
   val ehcacheTtlInSeconds: Int =
-    configuration.getOptional[Int]("mongo-feature-toggles-client.cacheTtlInSeconds").getOrElse(5)
+    configuration
+      .getOptional[Int]("mongo-feature-toggles-client.cacheTtlInSeconds")
+      .getOrElse(5)
 
   val internalAuthResourceType: String =
-    configuration.getOptional[String]("internal-auth.resource-type").getOrElse("ddcn-live-admin-frontend")
+    configuration
+      .getOptional[String]("microservice.services.internal-auth.resource-type")
+      .getOrElse("ddcn-live-admin-frontend")
 }
