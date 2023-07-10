@@ -28,7 +28,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration, SECONDS => Seconds}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-final class FeatureFlagService @Inject() (
+class FeatureFlagService @Inject() (
   appConfig: AppConfig,
   featureFlagRepository: FeatureFlagRepository,
   cache: AsyncCacheApi

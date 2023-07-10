@@ -47,11 +47,12 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
     )
     .build()
 
-  val featureFlags: List[FeatureFlag] = List(FeatureFlag(TestToggleA, false), FeatureFlag(TestToggleB, false))
+  val featureFlags: List[FeatureFlag]         = List(FeatureFlag(TestToggleA, false), FeatureFlag(TestToggleB, false))
   val controller: FeatureFlagsAdminController = app.injector.instanceOf[FeatureFlagsAdminController]
 
-  override protected val repository: PlayMongoRepository[FeatureFlagSerialised] =  app.injector.instanceOf[FeatureFlagRepository]
-  override val checkTtlIndex = false
+  override protected val repository: PlayMongoRepository[FeatureFlagSerialised] =
+    app.injector.instanceOf[FeatureFlagRepository]
+  override val checkTtlIndex                                                    = false
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -63,19 +64,24 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
     "get all the flags" in {
       when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
 
-      val request = FakeRequest("GET", "/")
+      val request                = FakeRequest("GET", "/")
         .withHeaders(HeaderNames.AUTHORIZATION -> "1")
 
       val result: Future[Result] = controller.get(request)
       status(result) mustBe OK
       contentAsJson(result).as[List[FeatureFlag]] mustBe featureFlags
-      verify(mockStubBehaviour).stubAuth(Some(Permission(
-        resource = Resource(
-          resourceType = ResourceType("ddcn-live-admin-frontend"),
-          resourceLocation = ResourceLocation("*")
+      verify(mockStubBehaviour).stubAuth(
+        Some(
+          Permission(
+            resource = Resource(
+              resourceType = ResourceType("ddcn-live-admin-frontend"),
+              resourceLocation = ResourceLocation("*")
+            ),
+            action = IAAction("ADMIN")
+          )
         ),
-        action = IAAction("ADMIN")
-      )), Retrieval.EmptyRetrieval)
+        Retrieval.EmptyRetrieval
+      )
     }
   }
 
@@ -89,13 +95,18 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
 
       val result: Future[Result] = controller.put(TestToggleA)(request)
       status(result) mustBe NO_CONTENT
-      verify(mockStubBehaviour).stubAuth(Some(Permission(
-        resource = Resource(
-          resourceType = ResourceType("ddcn-live-admin-frontend"),
-          resourceLocation = ResourceLocation("*")
+      verify(mockStubBehaviour).stubAuth(
+        Some(
+          Permission(
+            resource = Resource(
+              resourceType = ResourceType("ddcn-live-admin-frontend"),
+              resourceLocation = ResourceLocation("*")
+            ),
+            action = IAAction("ADMIN")
+          )
         ),
-        action = IAAction("ADMIN")
-      )), Retrieval.EmptyRetrieval)
+        Retrieval.EmptyRetrieval
+      )
     }
 
     "returns bad request" in {
@@ -107,13 +118,18 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
 
       val result: Future[Result] = controller.put(TestToggleA)(request).run()
       status(result) mustBe BAD_REQUEST
-      verify(mockStubBehaviour).stubAuth(Some(Permission(
-        resource = Resource(
-          resourceType = ResourceType("ddcn-live-admin-frontend"),
-          resourceLocation = ResourceLocation("*")
+      verify(mockStubBehaviour).stubAuth(
+        Some(
+          Permission(
+            resource = Resource(
+              resourceType = ResourceType("ddcn-live-admin-frontend"),
+              resourceLocation = ResourceLocation("*")
+            ),
+            action = IAAction("ADMIN")
+          )
         ),
-        action = IAAction("ADMIN")
-      )), Retrieval.EmptyRetrieval)
+        Retrieval.EmptyRetrieval
+      )
     }
   }
 
@@ -127,13 +143,18 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
 
       val result: Future[Result] = controller.putAll(request)
       status(result) mustBe NO_CONTENT
-      verify(mockStubBehaviour).stubAuth(Some(Permission(
-        resource = Resource(
-          resourceType = ResourceType("ddcn-live-admin-frontend"),
-          resourceLocation = ResourceLocation("*")
+      verify(mockStubBehaviour).stubAuth(
+        Some(
+          Permission(
+            resource = Resource(
+              resourceType = ResourceType("ddcn-live-admin-frontend"),
+              resourceLocation = ResourceLocation("*")
+            ),
+            action = IAAction("ADMIN")
+          )
         ),
-        action = IAAction("ADMIN")
-      )), Retrieval.EmptyRetrieval)
+        Retrieval.EmptyRetrieval
+      )
     }
 
     "returns bad request when body is invalid" in {
@@ -145,14 +166,19 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
 
       val result: Future[Result] = controller.putAll(request).run()
       status(result) mustBe BAD_REQUEST
-      verify(mockStubBehaviour).stubAuth(Some(Permission(
-        resource = Resource(
-          resourceType = ResourceType("ddcn-live-admin-frontend"),
-          resourceLocation = ResourceLocation("*")
+      verify(mockStubBehaviour).stubAuth(
+        Some(
+          Permission(
+            resource = Resource(
+              resourceType = ResourceType("ddcn-live-admin-frontend"),
+              resourceLocation = ResourceLocation("*")
+            ),
+            action = IAAction("ADMIN")
+          )
         ),
-        action = IAAction("ADMIN")
-      )), Retrieval.EmptyRetrieval)
+        Retrieval.EmptyRetrieval
+      )
     }
   }
 
-  }
+}
