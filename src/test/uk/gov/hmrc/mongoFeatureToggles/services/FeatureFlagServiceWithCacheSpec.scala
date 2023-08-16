@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mongoFeatureToggles.internal.services
+package uk.gov.hmrc.mongoFeatureToggles.services
 
 import org.mockito.ArgumentMatchers.any
 import play.api.cache.AsyncCacheApi
@@ -160,6 +160,19 @@ class FeatureFlagServiceWithCacheSpec extends BaseSpec {
       result.sortBy(_.name) mustBe expectedFeatureFlags.sortBy(_.name)
 
       verify(mockFeatureFlagRepository, times(1)).getAllFeatureFlags
+    }
+  }
+
+  "getAsEitherT" must {
+    "do the same as get but return an EitherT" in {
+      val expectedFeatureFlag = FeatureFlag(TestToggleA, true)
+      when(mockFeatureFlagRepository.getFeatureFlag(any())).thenReturn(Future.successful(Some(expectedFeatureFlag)))
+
+      val resultEitherT = featureFlagService.getAsEitherT(TestToggleA).value.futureValue
+      val result        = Right(featureFlagService.get(TestToggleA).futureValue)
+      result mustBe resultEitherT
+
+      verify(mockFeatureFlagRepository, times(1)).getFeatureFlag(any())
     }
   }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mongoFeatureToggles.internal.services
+package uk.gov.hmrc.mongoFeatureToggles.services
 
 import akka.Done
 import org.mockito.ArgumentCaptor
@@ -23,7 +23,6 @@ import play.api.cache.AsyncCacheApi
 import play.api.inject.bind
 import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
 import uk.gov.hmrc.mongoFeatureToggles.internal.repository.FeatureFlagRepository
-import uk.gov.hmrc.mongoFeatureToggles.services.FeatureFlagService
 import uk.gov.hmrc.mongoFeatureToggles.testUtils.{BaseSpec, TestToggleA, TestToggleB}
 
 import scala.concurrent.Future

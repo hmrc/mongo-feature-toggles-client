@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.mongoFeatureToggles.services
 
+import cats.data.EitherT
 import play.api.Logging
 import play.api.cache.AsyncCacheApi
 import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
@@ -48,12 +49,17 @@ class FeatureFlagService @Inject() (
       _      <- Future.successful(Thread.sleep(appConfig.ehcacheTtlInSeconds * 1000))
     } yield result
 
-  def get(flagName: FeatureFlagName): Future[FeatureFlag] =
+  private def innerGet(flagName: FeatureFlagName): Future[FeatureFlag] =
     cache.getOrElseUpdate(flagName.toString, cacheValidFor) {
       featureFlagRepository
         .getFeatureFlag(flagName)
         .map(_.getOrElse(FeatureFlag(flagName, false)))
     }
+
+  def get(flagName: FeatureFlagName): Future[FeatureFlag] = innerGet(flagName)
+
+  def getAsEitherT[A](flagName: FeatureFlagName): EitherT[Future, A, FeatureFlag] =
+    EitherT[Future, A, FeatureFlag](innerGet(flagName).map(Right(_)))
 
   def getAll: Future[List[FeatureFlag]] =
     cache.getOrElseUpdate(allFeatureFlagsCacheKey, cacheValidFor) {
