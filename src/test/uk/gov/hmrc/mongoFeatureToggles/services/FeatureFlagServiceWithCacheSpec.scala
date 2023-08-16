@@ -165,7 +165,7 @@ class FeatureFlagServiceWithCacheSpec extends BaseSpec {
 
   "getAsEitherT" must {
     "do the same as get but return an EitherT" in {
-      val expectedFeatureFlag = FeatureFlag(TestToggleA, math.random() < 0.5)
+      val expectedFeatureFlag = FeatureFlag(TestToggleA, true)
       when(mockFeatureFlagRepository.getFeatureFlag(any())).thenReturn(Future.successful(Some(expectedFeatureFlag)))
 
       val resultEitherT = featureFlagService.getAsEitherT(TestToggleA).value.futureValue
