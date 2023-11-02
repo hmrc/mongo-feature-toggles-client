@@ -62,26 +62,11 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
 
   "getAll" must {
     "get all the flags" in {
-      when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
-
-      val request                = FakeRequest("GET", "/")
-        .withHeaders(HeaderNames.AUTHORIZATION -> "1")
+      val request = FakeRequest("GET", "/")
 
       val result: Future[Result] = controller.get(request)
       status(result) mustBe OK
       contentAsJson(result).as[List[FeatureFlag]] mustBe featureFlags
-      verify(mockStubBehaviour).stubAuth(
-        Some(
-          Permission(
-            resource = Resource(
-              resourceType = ResourceType("ddcn-live-admin-frontend"),
-              resourceLocation = ResourceLocation("*")
-            ),
-            action = IAAction("ADMIN")
-          )
-        ),
-        Retrieval.EmptyRetrieval
-      )
     }
   }
 

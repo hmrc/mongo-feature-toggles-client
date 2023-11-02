@@ -33,7 +33,7 @@ class FeatureFlagsAdminController @Inject() (
 )(implicit ec: ExecutionContext)
     extends FrontendController(mcc) {
 
-  def get: Action[AnyContent] = auth().async {
+  def get: Action[AnyContent] = Action.async {
     featureFlagService.getAll
       .map(flags => Ok(Json.toJson(flags)))
   }
