@@ -40,8 +40,15 @@ import scala.concurrent.Future
 
 class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepositorySupport[FeatureFlagSerialised] {
 
+  private val extraConfigValues: Map[String, Any] = Map(
+    "mongodb.uri"                                    -> mongoUri,
+    "mongo-feature-toggles-client.cacheTtlInSeconds" -> 0
+  )
+
   override implicit lazy val app: Application = localGuiceApplicationBuilder()
-    .configure(Map("mongodb.uri" -> mongoUri, "mongo-feature-toggles-client.cacheTtlInSeconds" -> 0) ++ configValues)
+    .configure(
+      extraConfigValues ++ configValues
+    )
     .overrides(
       bind[MongoComponent].toInstance(mongoComponent)
     )

@@ -16,20 +16,24 @@
 
 package uk.gov.hmrc.mongoFeatureToggles.model
 
+import scala.annotation.nowarn
 import scala.collection.mutable.ListBuffer
 
 object FeatureFlagNamesLibrary extends FeatureFlagNamesLibrary
 
 trait FeatureFlagNamesLibrary {
+  @nowarn("msg=private var features in trait FeatureFlagNamesLibrary is never.*")
   private var features: ListBuffer[FeatureFlagName] = ListBuffer.empty[FeatureFlagName]
 
-  final def getAllFlags = {
+  final def getAllFlags: List[FeatureFlagName] = {
     if (features.isEmpty) {
       throw new RuntimeException("No feature flags in FeatureFlagNamesLibrary. Have you added the flags?")
     }
     features.toList
   }
 
-  final def addFlags(flags: List[FeatureFlagName]) =
-    features = flags.to(ListBuffer)
+  final def addFlags(flags: List[FeatureFlagName]): Unit = {
+    features.clear()
+    features.appendAll(flags)
+  }
 }

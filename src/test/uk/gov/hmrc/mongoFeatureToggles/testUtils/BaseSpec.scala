@@ -45,7 +45,7 @@ trait BaseSpec
     with Injecting {
   this: Suite =>
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   val configValues: Map[String, AnyVal] =
     Map(
@@ -62,11 +62,11 @@ trait BaseSpec
 
   override implicit lazy val app: Application = localGuiceApplicationBuilder().build()
 
-  val expectedPredicate =
+  val expectedPredicate: Permission =
     Permission(Resource(ResourceType("ddcn-live-admin-frontend"), ResourceLocation("*")), IAAction("ADMIN"))
 
-  lazy val mockStubBehaviour         = mock[StubBehaviour]
-  lazy val stubBackendAuthComponents =
+  lazy val mockStubBehaviour: StubBehaviour                 = mock[StubBehaviour]
+  lazy val stubBackendAuthComponents: BackendAuthComponents =
     BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), implicitly)
 
 }

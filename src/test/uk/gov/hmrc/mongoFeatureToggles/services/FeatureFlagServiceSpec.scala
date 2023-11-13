@@ -19,6 +19,7 @@ package uk.gov.hmrc.mongoFeatureToggles.services
 import akka.Done
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
+import play.api.Application
 import play.api.cache.AsyncCacheApi
 import play.api.inject.bind
 import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
@@ -30,11 +31,11 @@ import scala.jdk.CollectionConverters._
 
 class FeatureFlagServiceSpec extends BaseSpec {
 
-  val mockAppConfig             = mock[AppConfig]
-  val mockFeatureFlagRepository = mock[FeatureFlagRepository]
-  val mockCache                 = mock[AsyncCacheApi]
+  val mockAppConfig: AppConfig                         = mock[AppConfig]
+  val mockFeatureFlagRepository: FeatureFlagRepository = mock[FeatureFlagRepository]
+  val mockCache: AsyncCacheApi                         = mock[AsyncCacheApi]
 
-  override implicit lazy val app = localGuiceApplicationBuilder()
+  override implicit lazy val app: Application = localGuiceApplicationBuilder()
     .overrides(
       bind[AppConfig].toInstance(mockAppConfig),
       bind[FeatureFlagRepository].toInstance(mockFeatureFlagRepository),
@@ -45,7 +46,7 @@ class FeatureFlagServiceSpec extends BaseSpec {
   override def beforeEach(): Unit =
     reset(mockAppConfig, mockFeatureFlagRepository, mockCache)
 
-  val featureFlagService = inject[FeatureFlagService]
+  val featureFlagService: FeatureFlagService = inject[FeatureFlagService]
 
   "set" must {
     "set a feature flag" in {

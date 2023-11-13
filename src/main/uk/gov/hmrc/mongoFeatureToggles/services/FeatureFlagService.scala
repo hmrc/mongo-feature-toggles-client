@@ -37,7 +37,7 @@ class FeatureFlagService @Inject() (
   ec: ExecutionContext
 ) extends Logging {
   val cacheValidFor: FiniteDuration   =
-    Duration(appConfig.ehcacheTtlInSeconds, Seconds)
+    Duration(appConfig.cacheTtlInSeconds, Seconds)
   private val allFeatureFlagsCacheKey = "*$*$allFeatureFlags*$*$"
 
   def set(flagName: FeatureFlagName, enabled: Boolean): Future[Boolean] =
@@ -46,7 +46,7 @@ class FeatureFlagService @Inject() (
       _      <- cache.remove(allFeatureFlagsCacheKey)
       result <- featureFlagRepository.setFeatureFlag(flagName, enabled)
       //blocking thread to let time to other containers to update their cache
-      _      <- Future.successful(Thread.sleep(appConfig.ehcacheTtlInSeconds * 1000))
+      _      <- Future.successful(Thread.sleep(appConfig.cacheTtlInSeconds * 1000))
     } yield result
 
   private def innerGet(flagName: FeatureFlagName): Future[FeatureFlag] =
@@ -94,7 +94,7 @@ class FeatureFlagService @Inject() (
       }
       .map { _ =>
         //blocking thread to let time to other containers to update their cache
-        Thread.sleep(appConfig.ehcacheTtlInSeconds * 1000)
+        Thread.sleep(appConfig.cacheTtlInSeconds * 1000)
         ()
       }
 }

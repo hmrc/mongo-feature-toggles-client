@@ -18,6 +18,7 @@ package uk.gov.hmrc.mongoFeatureToggles.internal.repository
 
 import org.mongodb.scala.MongoWriteException
 import org.mongodb.scala.bson.BsonDocument
+import play.api.Application
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
@@ -25,6 +26,7 @@ import uk.gov.hmrc.mongoFeatureToggles.internal.model.{DeletedToggle, FeatureFla
 import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName, FeatureFlagNamesLibrary}
 import play.api.inject.bind
 import uk.gov.hmrc.mongoFeatureToggles.testUtils.{BaseSpec, TestToggleA, TestToggleB}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepositorySupport[FeatureFlagSerialised] {
 
@@ -33,7 +35,7 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
     FeatureFlagNamesLibrary.addFlags(List(TestToggleA, TestToggleB))
   }
 
-  override protected lazy val optSchema = Some(BsonDocument("""
+  override protected lazy val optSchema: Option[BsonDocument] = Some(BsonDocument("""
       { bsonType: "object"
       , required: [ "_id", "name", "isEnabled" ]
       , properties:
@@ -45,7 +47,7 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
       }
     """))
 
-  override implicit lazy val app = localGuiceApplicationBuilder()
+  override implicit lazy val app: Application = localGuiceApplicationBuilder()
     .configure(Map("mongodb.uri" -> mongoUri) ++ configValues)
     .overrides(
       bind[MongoComponent].toInstance(mongoComponent)
@@ -54,7 +56,7 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
 
   override val checkTtlIndex = false
 
-  lazy val repository = app.injector.instanceOf[FeatureFlagRepository]
+  lazy val repository: FeatureFlagRepository = app.injector.instanceOf[FeatureFlagRepository]
 
   "getFlag" must {
     "return None if there is no record" in {
