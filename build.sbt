@@ -54,3 +54,5 @@ lazy val library = Project(s"$libName-play-28", file("."))
   )
   .settings(routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"))
   .settings(ScoverageSettings())
+  .settings(libraryDependencySchemes ++= Seq(
+    "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always))
