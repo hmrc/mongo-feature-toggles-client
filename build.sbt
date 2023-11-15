@@ -20,7 +20,8 @@ import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
 
 val libName = "mongo-feature-toggles-client"
 
-val scala2_13 = "2.13.8"
+val scala2_13 = "2.13.12"
+val scala2_12 = "2.12.18"
 
 lazy val library = Project(s"$libName-play-28", file("."))
   .enablePlugins(PlayScala)
@@ -36,7 +37,7 @@ lazy val library = Project(s"$libName-play-28", file("."))
     name := libName,
     scalaVersion := scala2_13,
     organization := "uk.gov.hmrc",
-    crossScalaVersions := Seq(scala2_13),
+    crossScalaVersions := Seq(scala2_13, scala2_12),
     libraryDependencies ++= BuildDependencies(),
     isPublicArtefact := true,
     majorVersion     := 0,
@@ -53,3 +54,5 @@ lazy val library = Project(s"$libName-play-28", file("."))
   )
   .settings(routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"))
   .settings(ScoverageSettings())
+  .settings(libraryDependencySchemes ++= Seq(
+    "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always))

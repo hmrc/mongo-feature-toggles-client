@@ -52,7 +52,7 @@ private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
     with Transactions
     with Logging {
 
-  private implicit val tc = TransactionConfiguration.strict
+  private implicit val tc: TransactionConfiguration = TransactionConfiguration.strict
 
   def deleteFeatureFlag(featureFlagName: FeatureFlagName): Future[Boolean] =
     collection
@@ -82,7 +82,7 @@ private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
               case JsSuccess(value, _) => FeatureFlag(value, flag.isEnabled, flag.description)
               case JsError(_)          =>
                 logger.warn(s"The feature flag `${flag.name}` does not exist anymore")
-                FeatureFlag(DeletedToggle(flag.name), false)
+                FeatureFlag(DeletedToggle(flag.name), isEnabled = false)
             }
           }
         )

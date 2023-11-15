@@ -22,7 +22,7 @@ import javax.inject.{Inject, Singleton}
 
 @Singleton
 private[mongoFeatureToggles] class AppConfig @Inject() (configuration: Configuration) {
-  val ehcacheTtlInSeconds: Int =
+  val cacheTtlInSeconds: Int =
     configuration
       .getOptional[Int]("mongo-feature-toggles-client.cacheTtlInSeconds")
       .getOrElse(5)

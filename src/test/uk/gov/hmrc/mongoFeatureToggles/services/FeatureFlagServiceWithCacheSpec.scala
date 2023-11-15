@@ -17,13 +17,13 @@
 package uk.gov.hmrc.mongoFeatureToggles.services
 
 import org.mockito.ArgumentMatchers.any
+import play.api.Application
 import play.api.cache.AsyncCacheApi
 import play.api.inject.bind
 import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
 import uk.gov.hmrc.mongoFeatureToggles.internal.model.DeletedToggle
 import uk.gov.hmrc.mongoFeatureToggles.internal.repository.FeatureFlagRepository
 import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName, FeatureFlagNamesLibrary}
-import uk.gov.hmrc.mongoFeatureToggles.services.FeatureFlagService
 import uk.gov.hmrc.mongoFeatureToggles.testUtils.{BaseSpec, TestToggleA, TestToggleB}
 
 import scala.concurrent.Future
@@ -31,10 +31,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class FeatureFlagServiceWithCacheSpec extends BaseSpec {
 
-  val mockAppConfig             = mock[AppConfig]
-  val mockFeatureFlagRepository = mock[FeatureFlagRepository]
+  val mockAppConfig: AppConfig                         = mock[AppConfig]
+  val mockFeatureFlagRepository: FeatureFlagRepository = mock[FeatureFlagRepository]
 
-  override implicit lazy val app = localGuiceApplicationBuilder()
+  override implicit lazy val app: Application = localGuiceApplicationBuilder()
     .overrides(
       bind[AppConfig].toInstance(mockAppConfig),
       bind[FeatureFlagRepository].toInstance(mockFeatureFlagRepository)
@@ -48,8 +48,8 @@ class FeatureFlagServiceWithCacheSpec extends BaseSpec {
     cache.removeAll()
   }
 
-  lazy val featureFlagService = inject[FeatureFlagService]
-  lazy val cache              = inject[AsyncCacheApi]
+  lazy val featureFlagService: FeatureFlagService = inject[FeatureFlagService]
+  lazy val cache: AsyncCacheApi                   = inject[AsyncCacheApi]
 
   "getAll" must {
     "get all the feature flags defaulted to false" when {
