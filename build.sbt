@@ -16,31 +16,27 @@
 
 import sbt.Keys._
 import sbt._
-import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
 
 val libName = "mongo-feature-toggles-client"
 
 val scala2_13 = "2.13.12"
 val scala2_12 = "2.12.18"
 
-lazy val library = Project(s"$libName-play-28", file("."))
+ThisBuild / scalaVersion       := scala2_13
+ThisBuild / majorVersion       := 1
+ThisBuild / isPublicArtefact   := true
+ThisBuild / libraryDependencySchemes ++= Seq(
+  "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
+
+lazy val library = (project in file("."))
   .enablePlugins(PlayScala)
   .disablePlugins(PlayLayoutPlugin)
-  .configs(IntegrationTest)
-  .settings(integrationTestSettings(): _*)
-  .settings(IntegrationTest / unmanagedSourceDirectories  := (IntegrationTest / baseDirectory)(base => Seq(
-    base / "src" / "it" / "scala"
-  )).value)
   .settings(
-    Compile / unmanagedSourceDirectories    += baseDirectory.value / "/src/main",
-    Test    / unmanagedSourceDirectories    += baseDirectory.value / "/src/test",
+    sharedSources,
     name := libName,
     scalaVersion := scala2_13,
     organization := "uk.gov.hmrc",
-    crossScalaVersions := Seq(scala2_13, scala2_12),
-    libraryDependencies ++= BuildDependencies(),
-    isPublicArtefact := true,
-    majorVersion     := 0,
+    libraryDependencies ++= BuildDependencies.compile30 ++ BuildDependencies.test30,
     scalafmtOnCompile := true,
     scalacOptions ++= Seq(
       "-feature",
@@ -48,11 +44,41 @@ lazy val library = Project(s"$libName-play-28", file("."))
       "-Wconf:cat=unused&src=.*RoutesPrefix\\.scala:s",
       "-Wconf:cat=unused&src=.*Routes\\.scala:s",
       "-Wconf:cat=unused&src=.*ReverseRoutes\\.scala:s"
-    ),
-    resolvers += Resolver.typesafeRepo("releases"),
-    Test / fork := true //Required to prevent https://github.com/sbt/sbt/issues/4609,
+    )
   )
   .settings(routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"))
   .settings(ScoverageSettings())
   .settings(libraryDependencySchemes ++= Seq(
     "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always))
+  .aggregate(
+    play28,
+    play29,
+    play30
+  )
+
+lazy val play28 = Project(s"$libName-play-28", file("play-28"))
+  .settings(
+    crossScalaVersions := Seq(scala2_12, scala2_13),
+    libraryDependencies ++= BuildDependencies.compile28 ++ BuildDependencies.test28,
+    sharedSources
+  )
+
+lazy val play29 = Project(s"$libName-play-29", file("play-29"))
+  .settings(
+    crossScalaVersions := Seq(scala2_13),
+    libraryDependencies ++= BuildDependencies.compile29 ++ BuildDependencies.test29,
+    sharedSources
+  )
+
+lazy val play30 = Project(s"$libName-play-30", file("play-30"))
+  .settings(
+    crossScalaVersions := Seq(scala2_13),
+    libraryDependencies ++= BuildDependencies.compile30 ++ BuildDependencies.test30,
+    sharedSources
+  )
+
+def sharedSources = Seq(
+  Compile / unmanagedSourceDirectories += baseDirectory.value / "../src/main/scala",
+  Compile / unmanagedResourceDirectories += baseDirectory.value / "../src/main/resources",
+  Test / unmanagedSourceDirectories += baseDirectory.value / "../src/test"
+)
