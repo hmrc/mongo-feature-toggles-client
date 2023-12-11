@@ -44,9 +44,11 @@ ThisBuild / scalacOptions ++= Seq(
 lazy val library = (project in file("."))
   .settings(publish / skip := true)
   .aggregate(
-    play28,
-    play29,
-    play30
+    sys.env.get("PLAY_VERSION") match {
+      case Some("2.8") => play28
+      case Some("2.9") => play29
+      case _ => play30
+    }
   )
 
 lazy val play28 = Project(s"$libName-play-28", file("play-28"))

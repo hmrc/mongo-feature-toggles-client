@@ -1,5 +1,5 @@
-import sbt._
-import play.sbt.PlayImport._
+import play.sbt.PlayImport.caffeine
+import sbt.*
 
 private object BuildDependencies {
   private val playVersion28 = "play-28"
