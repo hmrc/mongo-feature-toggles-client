@@ -41,7 +41,7 @@ ThisBuild / scalacOptions ++= Seq(
   "-Wconf:cat=unused&src=.*ReverseRoutes\\.scala:s"
 )
 
-lazy val library = (project in file("."))
+lazy val library = Project(libName, file("."))
   .settings(publish / skip := true)
   .aggregate(
     sys.env.get("PLAY_VERSION") match {
@@ -51,7 +51,14 @@ lazy val library = (project in file("."))
     }
   )
 
-lazy val play28 = Project(s"$libName-play-28", file("play-28"))
+def copyPlay30Sources(module: Project) =
+  CopySources.copySources(
+    module,
+    transformSource   = _.replace("org.apache.pekko", "akka"),
+    transformResource = _.replace("pekko", "akka")
+  )
+
+lazy val play28 = Project(s"$libName-play-28", file(s"$libName-play-28"))
   .enablePlugins(PlayScala)
   .disablePlugins(PlayLayoutPlugin)
   .settings(
@@ -59,10 +66,10 @@ lazy val play28 = Project(s"$libName-play-28", file("play-28"))
     ScoverageSettings(),
     crossScalaVersions := Seq(scala2_12, scala2_13),
     libraryDependencies ++= BuildDependencies.compile28 ++ BuildDependencies.test28,
-    sharedSources
+    copyPlay30Sources(play30)
   )
 
-lazy val play29 = Project(s"$libName-play-29", file("play-29"))
+lazy val play29 = Project(s"$libName-play-29", file(s"$libName-play-29"))
   .enablePlugins(PlayScala)
   .disablePlugins(PlayLayoutPlugin)
   .settings(
@@ -70,22 +77,16 @@ lazy val play29 = Project(s"$libName-play-29", file("play-29"))
     ScoverageSettings(),
     crossScalaVersions := Seq(scala2_13),
     libraryDependencies ++= BuildDependencies.compile29 ++ BuildDependencies.test29,
-    sharedSources
+    copyPlay30Sources(play30)
   )
 
-lazy val play30 = Project(s"$libName-play-30", file("play-30"))
+lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
   .enablePlugins(PlayScala)
   .disablePlugins(PlayLayoutPlugin)
   .settings(
     routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"),
     ScoverageSettings(),
     crossScalaVersions := Seq(scala2_13),
-    libraryDependencies ++= BuildDependencies.compile30 ++ BuildDependencies.test30,
-    sharedSources
+    libraryDependencies ++= BuildDependencies.compile30 ++ BuildDependencies.test30
   )
 
-def sharedSources = Seq(
-  Compile / unmanagedSourceDirectories += baseDirectory.value / "../src-common/main/scala",
-  Compile / unmanagedResourceDirectories += baseDirectory.value / "../src-common/main/resources",
-  Test / unmanagedSourceDirectories += baseDirectory.value / "../src-common/test"
-)
