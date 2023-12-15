@@ -66,12 +66,12 @@ class FeatureFlagService @Inject() (
       featureFlagRepository.getAllFeatureFlags.map { mongoFlags =>
         val (deletedFlags, validMongoFlags) = mongoFlags.partition(_.name.isInstanceOf[DeletedToggle])
 
-        Future(deletedFlags.foreach { flag =>
+        deletedFlags.foreach { flag =>
           featureFlagRepository.deleteFeatureFlag(flag.name).map {
             case true  => logger.warn(s"Flag `${flag.name}` has been deleted from Mongo")
             case false => logger.error(s"Flag `${flag.name}` could not be deleted from Mongo")
           }
-        })
+        }
 
         FeatureFlagNamesLibrary.getAllFlags
           .foldLeft(validMongoFlags.reverse) { (featureFlags, missingFlag) =>

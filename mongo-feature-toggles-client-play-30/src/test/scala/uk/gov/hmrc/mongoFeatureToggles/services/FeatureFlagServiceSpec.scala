@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.mongoFeatureToggles.services
 
-import akka.Done
+import org.apache.pekko.Done
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import play.api.Application

@@ -16,43 +16,90 @@
 
 import sbt.Keys._
 import sbt._
-import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
 
 val libName = "mongo-feature-toggles-client"
 
 val scala2_13 = "2.13.12"
 val scala2_12 = "2.12.18"
 
-lazy val library = Project(s"$libName-play-28", file("."))
+// Disable multiple project tests running at the same time, since notablescan flag is a global setting.
+// https://www.scala-sbt.org/1.x/docs/Parallel-Execution.html
+Global / concurrentRestrictions += Tags.limitSum(1, Tags.Test, Tags.Untagged)
+
+ThisBuild / scalaVersion       := scala2_13
+ThisBuild / majorVersion       := 1
+ThisBuild / isPublicArtefact   := true
+ThisBuild / libraryDependencySchemes ++= Seq(
+  "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
+ThisBuild / organization := "uk.gov.hmrc"
+ThisBuild / scalafmtOnCompile := true
+ThisBuild / scalacOptions ++= Seq(
+  "-feature",
+  "-Werror",
+  "-Wconf:cat=unused&src=.*RoutesPrefix\\.scala:s",
+  "-Wconf:cat=unused&src=.*Routes\\.scala:s",
+  "-Wconf:cat=unused&src=.*ReverseRoutes\\.scala:s"
+)
+
+lazy val library = Project(libName, file("."))
+  .settings(publish / skip := true)
+  .aggregate(
+    sys.env.get("PLAY_VERSION") match {
+      case Some("2.8") => play28
+      case Some("2.9") => play29
+      case _ => play30
+    }
+  )
+
+def copyPlay30Sources(module: Project) =
+  CopySources.copySources(
+    module,
+    transformSource   = _.replace("org.apache.pekko", "akka"),
+    transformResource = _.replace("pekko", "akka")
+  )
+
+def copyPlay30Routes(module: Project) = Seq(
+  Compile / routes / sources ++= {
+    val dirs = (module / Compile / unmanagedResourceDirectories).value
+    (dirs * "routes").get ++ (dirs * "*.routes").get
+  }
+)
+
+lazy val play28 = Project(s"$libName-play-28", file(s"$libName-play-28"))
   .enablePlugins(PlayScala)
   .disablePlugins(PlayLayoutPlugin)
-  .configs(IntegrationTest)
-  .settings(integrationTestSettings(): _*)
-  .settings(IntegrationTest / unmanagedSourceDirectories  := (IntegrationTest / baseDirectory)(base => Seq(
-    base / "src" / "it" / "scala"
-  )).value)
   .settings(
-    Compile / unmanagedSourceDirectories    += baseDirectory.value / "/src/main",
-    Test    / unmanagedSourceDirectories    += baseDirectory.value / "/src/test",
-    name := libName,
-    scalaVersion := scala2_13,
-    organization := "uk.gov.hmrc",
-    crossScalaVersions := Seq(scala2_13, scala2_12),
-    libraryDependencies ++= BuildDependencies(),
-    isPublicArtefact := true,
-    majorVersion     := 0,
-    scalafmtOnCompile := true,
-    scalacOptions ++= Seq(
-      "-feature",
-      "-Werror",
-      "-Wconf:cat=unused&src=.*RoutesPrefix\\.scala:s",
-      "-Wconf:cat=unused&src=.*Routes\\.scala:s",
-      "-Wconf:cat=unused&src=.*ReverseRoutes\\.scala:s"
-    ),
-    resolvers += Resolver.typesafeRepo("releases"),
-    Test / fork := true //Required to prevent https://github.com/sbt/sbt/issues/4609,
+    routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"),
+    ScoverageSettings(),
+    crossScalaVersions := Seq(scala2_12, scala2_13),
+    libraryDependencies ++= BuildDependencies.compile28 ++ BuildDependencies.test28,
+    copyPlay30Sources(play30),
+    copyPlay30Routes(play30)
   )
-  .settings(routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"))
-  .settings(ScoverageSettings())
-  .settings(libraryDependencySchemes ++= Seq(
-    "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always))
+
+lazy val play29 = Project(s"$libName-play-29", file(s"$libName-play-29"))
+  .enablePlugins(PlayScala)
+  .disablePlugins(PlayLayoutPlugin)
+  .settings(
+    routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"),
+    ScoverageSettings(),
+    crossScalaVersions := Seq(scala2_13),
+    libraryDependencies ++= BuildDependencies.compile29 ++ BuildDependencies.test29,
+    copyPlay30Sources(play30),
+    copyPlay30Routes(play30)
+  )
+
+lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
+  .enablePlugins(PlayScala)
+  .disablePlugins(PlayLayoutPlugin)
+  .settings(
+    routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"),
+    ScoverageSettings(),
+    crossScalaVersions := Seq(scala2_13),
+    libraryDependencies ++= BuildDependencies.compile30 ++ BuildDependencies.test30,
+    Compile / routes / sources ++= {
+      val dirs = (Compile / unmanagedResourceDirectories).value
+      (dirs * "routes").get ++ (dirs * "*.routes").get
+    }
+  )
+
