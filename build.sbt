@@ -58,6 +58,13 @@ def copyPlay30Sources(module: Project) =
     transformResource = _.replace("pekko", "akka")
   )
 
+def copyPlay30Routes(module: Project) = Seq(
+  Compile / routes / sources ++= {
+    val dirs = (module / Compile / unmanagedResourceDirectories).value
+    (dirs * "routes").get ++ (dirs * "*.routes").get
+  }
+)
+
 lazy val play28 = Project(s"$libName-play-28", file(s"$libName-play-28"))
   .enablePlugins(PlayScala)
   .disablePlugins(PlayLayoutPlugin)
@@ -66,7 +73,8 @@ lazy val play28 = Project(s"$libName-play-28", file(s"$libName-play-28"))
     ScoverageSettings(),
     crossScalaVersions := Seq(scala2_12, scala2_13),
     libraryDependencies ++= BuildDependencies.compile28 ++ BuildDependencies.test28,
-    copyPlay30Sources(play30)
+    copyPlay30Sources(play30),
+    copyPlay30Routes(play30)
   )
 
 lazy val play29 = Project(s"$libName-play-29", file(s"$libName-play-29"))
@@ -77,7 +85,8 @@ lazy val play29 = Project(s"$libName-play-29", file(s"$libName-play-29"))
     ScoverageSettings(),
     crossScalaVersions := Seq(scala2_13),
     libraryDependencies ++= BuildDependencies.compile29 ++ BuildDependencies.test29,
-    copyPlay30Sources(play30)
+    copyPlay30Sources(play30),
+    copyPlay30Routes(play30)
   )
 
 lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
@@ -87,6 +96,10 @@ lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
     routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"),
     ScoverageSettings(),
     crossScalaVersions := Seq(scala2_13),
-    libraryDependencies ++= BuildDependencies.compile30 ++ BuildDependencies.test30
+    libraryDependencies ++= BuildDependencies.compile30 ++ BuildDependencies.test30,
+    Compile / routes / sources ++= {
+      val dirs = (Compile / unmanagedResourceDirectories).value
+      (dirs * "routes").get ++ (dirs * "*.routes").get
+    }
   )
 
