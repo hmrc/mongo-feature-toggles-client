@@ -6,8 +6,8 @@ This library is a client to use mongo as storage for feature toggles.
 ## How it works
 
 ### Add the library
-```scala
-"uk.gov.hmrc" %% "mongo-feature-toggles-client" % "0.1.0"
+```sbt
+"uk.gov.hmrc" %% s"mongo-feature-toggles-client-$playVersion" % hmrcMongoFeatureTogglesClientVersion
 ```
 
 ### Add the mongodb uri if not already present in application.conf and app-config-*
