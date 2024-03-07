@@ -4,7 +4,7 @@ import sbt.*
 private object BuildDependencies {
 
   private val hmrcMongoVersion          = "1.7.0"
-  private val bootstrapVersion          = "8.4.0"
+  private val bootstrapVersion          = "8.5.0"
   private val internalAuthClientVersion = "1.10.0"
 
   //Intentionally left on an older version
