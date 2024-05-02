@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import sbt.Keys._
-import sbt._
+import BuildDependencies.{bootstrapVersion, bootstrapVersion28, hmrcMongoVersion, playVersion28, playVersion29, playVersion30}
+import sbt.Keys.*
+import sbt.*
 
 val libName = "mongo-feature-toggles-client"
 
@@ -41,15 +42,15 @@ ThisBuild / scalacOptions ++= Seq(
   "-Wconf:cat=unused&src=.*ReverseRoutes\\.scala:s"
 )
 
+lazy val projects: Seq[ProjectReference] = sys.env.get("PLAY_VERSION") match {
+  case Some("2.8") => Seq(play28, play28Test)
+  case Some("2.9") => Seq(play29, play29Test)
+  case _ => Seq(play30, play30Test)
+}
+
 lazy val library = Project(libName, file("."))
   .settings(publish / skip := true)
-  .aggregate(
-    sys.env.get("PLAY_VERSION") match {
-      case Some("2.8") => play28
-      case Some("2.9") => play29
-      case _ => play30
-    }
-  )
+  .aggregate(projects: _*)
 
 def copyPlay30Sources(module: Project) =
   CopySources.copySources(
@@ -77,6 +78,14 @@ lazy val play28 = Project(s"$libName-play-28", file(s"$libName-play-28"))
     copyPlay30Routes(play30)
   )
 
+lazy val play28Test = Project(s"$libName-test-play-28", file(s"$libName-test-play-28"))
+  .settings(libraryDependencies ++=
+    Seq("uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVersion28" % hmrcMongoVersion,
+        "uk.gov.hmrc"       %% s"bootstrap-test-$playVersion28"  % bootstrapVersion28
+    )
+  )
+  .dependsOn(play28)
+
 lazy val play29 = Project(s"$libName-play-29", file(s"$libName-play-29"))
   .enablePlugins(PlayScala)
   .disablePlugins(PlayLayoutPlugin)
@@ -88,6 +97,14 @@ lazy val play29 = Project(s"$libName-play-29", file(s"$libName-play-29"))
     copyPlay30Sources(play30),
     copyPlay30Routes(play30)
   )
+
+lazy val play29Test = Project(s"$libName-test-play-29", file(s"$libName-test-play-29"))
+  .settings(libraryDependencies ++=
+    Seq("uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVersion29" % hmrcMongoVersion,
+        "uk.gov.hmrc"       %% s"bootstrap-test-$playVersion29"  % bootstrapVersion
+    )
+  )
+  .dependsOn(play29)
 
 lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
   .enablePlugins(PlayScala)
@@ -102,4 +119,12 @@ lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
       (dirs * "routes").get ++ (dirs * "*.routes").get
     }
   )
+
+lazy val play30Test = Project(s"$libName-test-play-30", file(s"$libName-test-play-30"))
+  .settings(libraryDependencies ++=
+    Seq("uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVersion30" % hmrcMongoVersion,
+        "uk.gov.hmrc"       %% s"bootstrap-test-$playVersion30"  % bootstrapVersion
+    )
+  )
+  .dependsOn(play30)
 

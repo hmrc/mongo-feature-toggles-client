@@ -31,4 +31,9 @@ private[mongoFeatureToggles] class AppConfig @Inject() (configuration: Configura
     configuration
       .getOptional[String]("microservice.services.internal-auth.resource-type")
       .getOrElse("ddcn-live-admin-frontend")
+
+  val useMongoTransactions: Boolean =
+    configuration
+      .getOptional[Boolean]("mongo-feature-toggles-client.useMongoTransactions")
+      .getOrElse(true)
 }

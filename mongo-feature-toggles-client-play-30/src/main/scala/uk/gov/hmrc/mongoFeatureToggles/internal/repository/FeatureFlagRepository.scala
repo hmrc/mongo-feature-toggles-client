@@ -23,6 +23,7 @@ import play.api.libs.json.{Format, JsError, JsString, JsSuccess}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.transaction.{TransactionConfiguration, Transactions}
+import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
 import uk.gov.hmrc.mongoFeatureToggles.internal.model.{DeletedToggle, FeatureFlagSerialised}
 import uk.gov.hmrc.mongoFeatureToggles.model
 import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName}
@@ -33,7 +34,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
-  val mongoComponent: MongoComponent
+  val mongoComponent: MongoComponent,
+  appConfig: AppConfig
 )(implicit
   ec: ExecutionContext
 ) extends PlayMongoRepository[FeatureFlagSerialised](
@@ -106,12 +108,23 @@ private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
       FeatureFlagSerialised(flag.toString, status, flag.description)
     }.toList
     Mdc.preservingMdc(
-      withSessionAndTransaction(session =>
-        for {
-          _ <- collection.deleteMany(session, filter = in("name", flags.keys.toSeq.map(_.name): _*)).toFuture()
-          _ <- collection.insertMany(session, featureFlags).toFuture()
-        } yield ()
-      )
+      if (appConfig.useMongoTransactions) {
+        withSessionAndTransaction(session =>
+          for {
+            _ <- collection.deleteMany(session, filter = in("name", flags.keys.toSeq.map(_.name): _*)).toFuture()
+            _ <- collection.insertMany(session, featureFlags).toFuture()
+          } yield ()
+        )
+      } else {
+        logger.warn("Mongo transactions are disabled")
+        Future
+          .sequence(
+            flags.map { flag: (FeatureFlagName, Boolean) =>
+              setFeatureFlag(flag._1, flag._2)
+            }
+          )
+          .map(_ => ())
+      }
     )
   }
 }

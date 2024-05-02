@@ -10,17 +10,26 @@ This library is a client to use mongo as storage for feature toggles.
 "uk.gov.hmrc" %% s"mongo-feature-toggles-client-$playVersion" % hmrcMongoFeatureTogglesClientVersion
 ```
 
+You can also add the following in Test which will bring bootstrap-play-test and hmrc-mongo-test
+```sbt
+"uk.gov.hmrc" %% s"mongo-feature-toggles-client-test-$playVersion" % hmrcMongoFeatureTogglesClientVersion
+```
+
 ### Add the mongodb uri if not already present in application.conf and app-config-*
-Note the library is using transaction in mongo which requires mongo to be run as a cluster. 
+Note the library is using transaction in mongo which requires mongo to be run as a cluster.
 If you see the error `com.mongodb.MongoClientException, with message: This MongoDB deployment does not support retryable writes. Please add retryWrites=false to your connection string`
 when running tests, your mongo is not running as a cluster.
 
 ### Add internal auth binding
-The library uses [internal-auth-client](https://github.com/hmrc/internal-auth-client). 
+The library uses [internal-auth-client](https://github.com/hmrc/internal-auth-client).
 You will need to add the following binding to your ```application.conf```, unless your service already uses the ```internal-auth-client```, in which case this binding will already exist.
 ```scala
 play.modules.enabled += "uk.gov.hmrc.internalauth.client.modules.InternalAuthModule"
+play.modules.enabled += "uk.gov.hmrc.play.bootstrap.HttpClientV2Module"
 ```
+
+### Mongo transactions override
+If the the configuration `mongo-feature-toggles-client.useMongoTransactions = false` is used then the client won't use Mongo transactions. Do not override this in any environment. It is best suited while the service is started via service manager.
 
 ### Create a toggle
 Create a case object extending the FeatureFlagName trait
@@ -57,12 +66,12 @@ play.modules.enabled += "config.HmrcModule"
 ```
 
 ### Add the additional admin routes in admin.routes
-```text 
+```text
 -> /featureFlags mongoFeatureTogglesAdmin.Routes
 ```
 
 ### Add the additional test-only routes in testOnlyDoNotUseInAppConf.routes
-```text 
+```text
 -> /<rootPath> mongoFeatureTogglesTestOnly.Routes
 ```
 

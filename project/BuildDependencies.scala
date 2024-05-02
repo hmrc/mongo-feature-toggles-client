@@ -3,19 +3,19 @@ import sbt.*
 
 private object BuildDependencies {
 
-  private val hmrcMongoVersion          = "1.7.0"
-  private val bootstrapVersion          = "8.5.0"
-  private val internalAuthClientVersion = "1.10.0"
+  val hmrcMongoVersion          = "1.9.0"
+  val bootstrapVersion          = "8.5.0"
+  private val internalAuthClientVersion = "2.0.0"
 
   //Intentionally left on an older version
-  private val bootstrapVersion28 = "7.23.0"
+  val bootstrapVersion28 = "7.23.0"
 
   private val collectionCompatVersion   = "2.11.0"
   private val mockitoScalatestVersion   = "1.17.30"
 
-  private val playVersion28 = "play-28"
-  private val playVersion29 = "play-29"
-  private val playVersion30 = "play-30"
+  val playVersion28 = "play-28"
+  val playVersion29 = "play-29"
+  val playVersion30 = "play-30"
 
   val compile28: Seq[ModuleID] = Seq(
     caffeine,
