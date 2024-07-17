@@ -72,13 +72,17 @@ lazy val play29 = Project(s"$libName-play-29", file(s"$libName-play-29"))
     routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"),
     ScoverageSettings(),
     crossScalaVersions := Seq(scala2_13),
-    libraryDependencies ++= BuildDependencies.compile29,
+    libraryDependencies ++= BuildDependencies.compile29 ++ BuildDependencies.test29,
     copyPlay30Sources(play30),
     copyPlay30Routes(play30)
   )
 
 lazy val play29Test = Project(s"$libName-test-play-29", file(s"$libName-test-play-29"))
-  .settings(libraryDependencies ++= BuildDependencies.test29)
+  .settings(libraryDependencies ++=
+    Seq("uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVersion29" % hmrcMongoVersion,
+      "uk.gov.hmrc"       %% s"bootstrap-test-$playVersion29"  % bootstrapVersion
+    )
+  )
   .dependsOn(play29)
 
 lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
@@ -88,7 +92,7 @@ lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
     routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"),
     ScoverageSettings(),
     crossScalaVersions := Seq(scala2_13),
-    libraryDependencies ++= BuildDependencies.compile30,
+    libraryDependencies ++= BuildDependencies.compile30 ++ BuildDependencies.test30,
     Compile / routes / sources ++= {
       val dirs = (Compile / unmanagedResourceDirectories).value
       (dirs * "routes").get ++ (dirs * "*.routes").get
@@ -96,6 +100,10 @@ lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
   )
 
 lazy val play30Test = Project(s"$libName-test-play-30", file(s"$libName-test-play-30"))
-  .settings(libraryDependencies ++= BuildDependencies.test30)
+  .settings(libraryDependencies ++=
+    Seq("uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVersion30" % hmrcMongoVersion,
+      "uk.gov.hmrc"       %% s"bootstrap-test-$playVersion30"  % bootstrapVersion
+    )
+  )
   .dependsOn(play30)
 
