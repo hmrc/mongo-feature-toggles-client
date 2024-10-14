@@ -60,7 +60,7 @@ class FeatureFlagRepositoryWithoutTransactionsSpec
 
   override val checkTtlIndex = false
 
-  lazy val repository: FeatureFlagRepository = app.injector.instanceOf[FeatureFlagRepository]
+  override val repository: FeatureFlagRepository = app.injector.instanceOf[FeatureFlagRepository]
 
   "setFeatureFlags" must {
     "set multiple records" in {

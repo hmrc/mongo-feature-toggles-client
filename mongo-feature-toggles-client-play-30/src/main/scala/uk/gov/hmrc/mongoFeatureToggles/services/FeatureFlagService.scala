@@ -45,7 +45,7 @@ class FeatureFlagService @Inject() (
       _      <- cache.remove(flagName.toString)
       _      <- cache.remove(allFeatureFlagsCacheKey)
       result <- featureFlagRepository.setFeatureFlag(flagName, enabled)
-      //blocking thread to let time to other containers to update their cache
+      // blocking thread to let time to other containers to update their cache
       _      <- Future.successful(Thread.sleep(appConfig.cacheTtlInSeconds * 1000))
     } yield result
 
@@ -93,7 +93,7 @@ class FeatureFlagService @Inject() (
         featureFlagRepository.setFeatureFlags(flags)
       }
       .map { _ =>
-        //blocking thread to let time to other containers to update their cache
+        // blocking thread to let time to other containers to update their cache
         Thread.sleep(appConfig.cacheTtlInSeconds * 1000)
         ()
       }

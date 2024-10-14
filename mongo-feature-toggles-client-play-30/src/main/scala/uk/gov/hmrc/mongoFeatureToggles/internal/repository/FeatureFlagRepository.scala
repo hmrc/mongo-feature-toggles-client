@@ -28,6 +28,9 @@ import uk.gov.hmrc.mongoFeatureToggles.internal.model.{DeletedToggle, FeatureFla
 import uk.gov.hmrc.mongoFeatureToggles.model
 import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName}
 import uk.gov.hmrc.play.http.logging.Mdc
+import org.mongodb.scala.ToSingleObservablePublisher
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -119,8 +122,8 @@ private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
         logger.warn("Mongo transactions are disabled")
         Future
           .sequence(
-            flags.map { flag: (FeatureFlagName, Boolean) =>
-              setFeatureFlag(flag._1, flag._2)
+            flags.map { case (flag: FeatureFlagName, enabled: Boolean) =>
+              setFeatureFlag(flag, enabled)
             }
           )
           .map(_ => ())

@@ -20,8 +20,8 @@ import sbt.*
 
 val libName = "mongo-feature-toggles-client"
 
-val scala2_13 = "2.13.12"
-val scala2_12 = "2.12.18"
+val scala3    = "3.3.4"
+val scala2_13 = "2.13.15"
 
 // Disable multiple project tests running at the same time, since notablescan flag is a global setting.
 // https://www.scala-sbt.org/1.x/docs/Parallel-Execution.html
@@ -30,16 +30,12 @@ Global / concurrentRestrictions += Tags.limitSum(1, Tags.Test, Tags.Untagged)
 ThisBuild / scalaVersion       := scala2_13
 ThisBuild / majorVersion       := 1
 ThisBuild / isPublicArtefact   := true
-ThisBuild / libraryDependencySchemes ++= Seq(
-  "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
 ThisBuild / organization := "uk.gov.hmrc"
 ThisBuild / scalafmtOnCompile := true
 ThisBuild / scalacOptions ++= Seq(
   "-feature",
-  "-Werror",
-  "-Wconf:cat=unused&src=.*RoutesPrefix\\.scala:s",
-  "-Wconf:cat=unused&src=.*Routes\\.scala:s",
-  "-Wconf:cat=unused&src=.*ReverseRoutes\\.scala:s"
+  //"-Werror", //FIXME this option is disabled because of "Flag -<flag_name> set repeatedly" error
+  "-Wconf:src=routes/.*:s"
 )
 
 lazy val projects: Seq[ProjectReference] = sys.env.get("PLAY_VERSION") match {
@@ -79,7 +75,8 @@ lazy val play29 = Project(s"$libName-play-29", file(s"$libName-play-29"))
 
 lazy val play29Test = Project(s"$libName-test-play-29", file(s"$libName-test-play-29"))
   .settings(libraryDependencies ++=
-    Seq("uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVersion29" % hmrcMongoVersion,
+    Seq(
+      "uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVersion29" % hmrcMongoVersion,
       "uk.gov.hmrc"       %% s"bootstrap-test-$playVersion29"  % bootstrapVersion
     )
   )
@@ -91,7 +88,7 @@ lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
   .settings(
     routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"),
     ScoverageSettings(),
-    crossScalaVersions := Seq(scala2_13),
+    crossScalaVersions := Seq(scala2_13, scala3),
     libraryDependencies ++= BuildDependencies.compile30 ++ BuildDependencies.test30,
     Compile / routes / sources ++= {
       val dirs = (Compile / unmanagedResourceDirectories).value
@@ -100,10 +97,11 @@ lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
   )
 
 lazy val play30Test = Project(s"$libName-test-play-30", file(s"$libName-test-play-30"))
-  .settings(libraryDependencies ++=
-    Seq("uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVersion30" % hmrcMongoVersion,
+  .settings(
+    crossScalaVersions := Seq(scala2_13, scala3),
+    libraryDependencies ++= Seq(
+      "uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVersion30" % hmrcMongoVersion,
       "uk.gov.hmrc"       %% s"bootstrap-test-$playVersion30"  % bootstrapVersion
     )
   )
   .dependsOn(play30)
-

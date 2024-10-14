@@ -19,6 +19,7 @@ package uk.gov.hmrc.mongoFeatureToggles.services
 import org.apache.pekko.Done
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{reset, times, verify, when}
 import play.api.Application
 import play.api.cache.AsyncCacheApi
 import play.api.inject.bind
@@ -44,7 +45,7 @@ class FeatureFlagServiceSpec extends BaseSpec {
     .build()
 
   override def beforeEach(): Unit =
-    reset(mockAppConfig, mockFeatureFlagRepository, mockCache)
+    reset[Object](mockAppConfig, mockFeatureFlagRepository, mockCache)
 
   val featureFlagService: FeatureFlagService = inject[FeatureFlagService]
 
