@@ -56,7 +56,7 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
 
   override val checkTtlIndex = false
 
-  lazy val repository: FeatureFlagRepository = app.injector.instanceOf[FeatureFlagRepository]
+  override val repository: FeatureFlagRepository = app.injector.instanceOf[FeatureFlagRepository]
 
   "getFlag" must {
     "return None if there is no record" in {

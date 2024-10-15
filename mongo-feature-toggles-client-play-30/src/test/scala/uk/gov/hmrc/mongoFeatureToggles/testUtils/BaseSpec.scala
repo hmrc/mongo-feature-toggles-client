@@ -16,22 +16,22 @@
 
 package uk.gov.hmrc.mongoFeatureToggles.testUtils
 
-import org.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfterEach, Suite}
 import org.scalatest.concurrent.{PatienceConfiguration, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{BeforeAndAfterEach, Suite}
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
+import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.test.Helpers.stubControllerComponents
 import play.api.test.Injecting
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.Predicate.Permission
-import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, IAAction, Resource, ResourceLocation, ResourceType}
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
+import uk.gov.hmrc.internalauth.client._
 
-import play.api.inject.bind
-import play.api.test.Helpers.stubControllerComponents
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait BaseSpec

@@ -17,6 +17,7 @@
 package uk.gov.hmrc.mongoFeatureToggles.services
 
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{reset, times, verify, when}
 import play.api.Application
 import play.api.cache.AsyncCacheApi
 import play.api.inject.bind
@@ -26,8 +27,8 @@ import uk.gov.hmrc.mongoFeatureToggles.internal.repository.FeatureFlagRepository
 import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName, FeatureFlagNamesLibrary}
 import uk.gov.hmrc.mongoFeatureToggles.testUtils.{BaseSpec, TestToggleA, TestToggleB}
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class FeatureFlagServiceWithCacheSpec extends BaseSpec {
 
@@ -44,7 +45,7 @@ class FeatureFlagServiceWithCacheSpec extends BaseSpec {
   override def beforeEach(): Unit = {
     super.beforeEach()
     FeatureFlagNamesLibrary.addFlags(List(TestToggleA, TestToggleB))
-    reset(mockAppConfig, mockFeatureFlagRepository)
+    reset[Object](mockAppConfig, mockFeatureFlagRepository)
     cache.removeAll()
   }
 

@@ -53,7 +53,7 @@ class FeatureFlagsAdminController @Inject() (
     request.body.asJson.fold(Future.successful(BadRequest("Request body was invalid"))) { json =>
       val flags = json
         .as[Seq[FeatureFlag]]
-        .map(flag => (flag.name -> flag.isEnabled))
+        .map(flag => flag.name -> flag.isEnabled)
         .toMap
       featureFlagService.setAll(flags).map(_ => NoContent)
     }
