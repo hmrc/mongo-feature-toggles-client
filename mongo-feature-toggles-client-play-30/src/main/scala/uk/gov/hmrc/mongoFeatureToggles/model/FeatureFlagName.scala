@@ -16,24 +16,35 @@
 
 package uk.gov.hmrc.mongoFeatureToggles.model
 
-import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue, Reads, Writes}
+import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue, Json, Reads, Writes}
 import play.api.mvc.PathBindable
+import uk.gov.hmrc.mongoFeatureToggles.model.Environment.Environment
 
 trait FeatureFlagName {
-  val description: Option[String] = None
+  val description: Option[String]          = None
   val name: String
-  override def toString: String   = name
+  val defaultState: Boolean                = false
+  val lockedEnvironments: Seq[Environment] = Seq.empty
+  override def toString: String            = name
 }
 
 object FeatureFlagName {
-  implicit final val writes: Writes[FeatureFlagName] = (o: FeatureFlagName) => JsString(o.name)
+  implicit final val writes: Writes[FeatureFlagName] = (o: FeatureFlagName) =>
+    Json.obj(
+      "name"               -> o.name,
+      "description"        -> o.description,
+      "defaultState"       -> o.defaultState,
+      "lockedEnvironments" -> o.lockedEnvironments
+    )
 
   implicit final val reads: Reads[FeatureFlagName]    = new Reads[FeatureFlagName] {
-    override def reads(json: JsValue): JsResult[FeatureFlagName] =
+    override def reads(json: JsValue): JsResult[FeatureFlagName] = {
+      val name = (json \ "name").asOpt[String].getOrElse(json.as[String])
       FeatureFlagNamesLibrary.getAllFlags
-        .find(flag => JsString(flag.toString) == json)
+        .find(flag => flag.name == name)
         .map(JsSuccess(_))
         .getOrElse(JsError(s"Unknown FeatureFlagName `${json.toString}`"))
+    }
   }
   implicit final val formats: Format[FeatureFlagName] =
     Format(reads, writes)

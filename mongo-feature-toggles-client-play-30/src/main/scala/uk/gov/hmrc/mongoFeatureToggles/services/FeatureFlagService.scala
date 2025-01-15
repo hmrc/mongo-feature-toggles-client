@@ -53,7 +53,7 @@ class FeatureFlagService @Inject() (
     cache.getOrElseUpdate(flagName.toString, cacheValidFor) {
       featureFlagRepository
         .getFeatureFlag(flagName)
-        .map(_.getOrElse(FeatureFlag(flagName, false)))
+        .map(_.getOrElse(FeatureFlag(flagName, flagName.defaultState)))
     }
 
   def get(flagName: FeatureFlagName): Future[FeatureFlag] = innerGet(flagName)
@@ -78,7 +78,7 @@ class FeatureFlagService @Inject() (
             if (featureFlags.map(_.name).contains(missingFlag)) {
               featureFlags
             } else {
-              FeatureFlag(missingFlag, false) :: featureFlags
+              FeatureFlag(missingFlag, missingFlag.defaultState) :: featureFlags
             }
           }
           .reverse

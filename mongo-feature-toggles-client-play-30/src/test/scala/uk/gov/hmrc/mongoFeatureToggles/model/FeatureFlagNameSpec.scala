@@ -39,8 +39,9 @@ class FeatureFlagNameSpec extends BaseSpec {
   }
 
   "write json" in {
-    Json.toJson(TestToggleA: FeatureFlagName).toString mustBe s""""${TestToggleA.name}""""
-    Json.toJson(TestToggleA: FeatureFlagName).toString mustBe s""""${TestToggleA.toString}""""
+    Json
+      .toJson(TestToggleA: FeatureFlagName)
+      .toString mustBe s"""{"name":"${TestToggleA.name}","description":"${TestToggleA.description.get}","defaultState":${TestToggleA.defaultState},"lockedEnvironments":[]}"""
   }
 
   "String binds to a Right(FeatureFlagName)" in {

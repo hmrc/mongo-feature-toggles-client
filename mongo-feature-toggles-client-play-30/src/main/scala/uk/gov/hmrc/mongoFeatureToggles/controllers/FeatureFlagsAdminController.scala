@@ -17,6 +17,7 @@
 package uk.gov.hmrc.mongoFeatureToggles.controllers
 
 import play.api.libs.json.{JsBoolean, Json}
+import play.api.mvc.Results.Ok
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.mongoFeatureToggles.internal.actions.InternalAuthAction
 import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName}
@@ -35,7 +36,9 @@ class FeatureFlagsAdminController @Inject() (
 
   def get: Action[AnyContent] = Action.async {
     featureFlagService.getAll
-      .map(flags => Ok(Json.toJson(flags)))
+      .map { flags =>
+        Ok(Json.toJson(flags))
+      }
   }
 
   def put(flagName: FeatureFlagName): Action[AnyContent] = auth().async { request =>
