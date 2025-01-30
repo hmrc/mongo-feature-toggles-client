@@ -72,7 +72,7 @@ private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
         .find(Filters.equal("name", featureFlagName.name))
         .headOption()
         .map(
-          _.map(flag => model.FeatureFlag(JsString(flag.name).as[FeatureFlagName], flag.isEnabled, flag.description))
+          _.map(flag => model.FeatureFlag(JsString(flag.name).as[FeatureFlagName], flag.isEnabled))
         )
     )
 
@@ -84,7 +84,7 @@ private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
         .map(
           _.toList.map { flag =>
             JsString(flag.name).validate[FeatureFlagName] match {
-              case JsSuccess(value, _) => FeatureFlag(value, flag.isEnabled, flag.description)
+              case JsSuccess(value, _) => FeatureFlag(value, flag.isEnabled)
               case JsError(_)          =>
                 logger.warn(s"The feature flag `${flag.name}` does not exist anymore")
                 FeatureFlag(DeletedToggle(flag.name), isEnabled = false)
@@ -98,7 +98,7 @@ private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
       collection
         .replaceOne(
           filter = equal("name", featureFlagName.name),
-          replacement = FeatureFlagSerialised(featureFlagName.name, enabled, featureFlagName.description),
+          replacement = FeatureFlagSerialised(featureFlagName.name, enabled),
           options = ReplaceOptions().upsert(true)
         )
         .map(_.wasAcknowledged())
@@ -108,7 +108,7 @@ private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
 
   def setFeatureFlags(flags: Map[FeatureFlagName, Boolean]): Future[Unit] = {
     val featureFlags = flags.map { case (flag, status) =>
-      FeatureFlagSerialised(flag.toString, status, flag.description)
+      FeatureFlagSerialised(flag.toString, status)
     }.toList
     Mdc.preservingMdc(
       if (appConfig.useMongoTransactions) {

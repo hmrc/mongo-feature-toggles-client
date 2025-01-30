@@ -73,7 +73,7 @@ class FeatureFlagRepositoryWithoutTransactionsSpec
 
       result.sortBy(_.name) mustBe expectedFlags
         .map { case (key, value) =>
-          FeatureFlagSerialised(key.name, value, key.description)
+          FeatureFlagSerialised(key.name, value)
         }
         .toList
         .sortBy(_.name)

@@ -18,7 +18,7 @@ package uk.gov.hmrc.mongoFeatureToggles.model
 
 import play.api.libs.json._
 
-case class FeatureFlag(name: FeatureFlagName, isEnabled: Boolean, description: Option[String] = None)
+case class FeatureFlag(name: FeatureFlagName, isEnabled: Boolean)
 
 object FeatureFlag {
   implicit final val format: OFormat[FeatureFlag] = Json.format[FeatureFlag]

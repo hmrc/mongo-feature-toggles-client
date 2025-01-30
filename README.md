@@ -32,15 +32,17 @@ play.modules.enabled += "uk.gov.hmrc.play.bootstrap.HttpClientV2Module"
 If the the configuration `mongo-feature-toggles-client.useMongoTransactions = false` is used then the client won't use Mongo transactions. Do not override this in any environment. It is best suited while the service is started via service manager.
 
 ### Create a toggle
-Create a case object extending the FeatureFlagName trait
+Create a case object extending the FeatureFlagName trait.
+
+The lockedEnvironments allows to move the toggle per environment in a different part of the UI where their use is restricted.
 
 ```scala
 case object PertaxBackendToggle extends FeatureFlagName {
-  val name                                 = "pertax-backend-toggle"
-  override val description: Option[String] = Some(
-    "Enable/disable pertax backend during auth"
-  )
-}
+    override val description = Some("Description")
+    override val name = "toggle-name"
+    override val defaultState = false // State of the toggle when no entry is present in Mongo
+    override val lockedEnvironments = Seq(Environment.Production) // Locked toggled are placed in a different part of the UI
+  }
 ```
 
 ### Register toggles on application start

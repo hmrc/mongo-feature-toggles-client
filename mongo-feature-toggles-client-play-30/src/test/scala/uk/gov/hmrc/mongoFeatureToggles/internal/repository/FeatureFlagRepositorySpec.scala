@@ -67,11 +67,11 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
 
     "return a flag if there is a record" in {
       val result = (for {
-        _      <- insert(FeatureFlagSerialised(TestToggleA.name, true, TestToggleA.description))
+        _      <- insert(FeatureFlagSerialised(TestToggleA.name, true))
         result <- repository.getFeatureFlag(TestToggleA)
       } yield result).futureValue
 
-      result mustBe Some(FeatureFlag(TestToggleA, true, TestToggleA.description))
+      result mustBe Some(FeatureFlag(TestToggleA, true))
     }
   }
 
@@ -83,7 +83,7 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
       } yield result).futureValue
 
       result mustBe List(
-        FeatureFlagSerialised(TestToggleA.name, true, TestToggleA.description)
+        FeatureFlagSerialised(TestToggleA.name, true)
       )
     }
 
@@ -95,7 +95,7 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
       } yield result).futureValue
 
       result mustBe List(
-        FeatureFlagSerialised(TestToggleA.name, false, TestToggleA.description)
+        FeatureFlagSerialised(TestToggleA.name, false)
       )
     }
   }
@@ -111,7 +111,7 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
 
       result.sortBy(_.name) mustBe expectedFlags
         .map { case (key, value) =>
-          FeatureFlagSerialised(key.name, value, key.description)
+          FeatureFlagSerialised(key.name, value)
         }
         .toList
         .sortBy(_.name)
@@ -121,18 +121,18 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
   "getAllFeatureFlags" must {
     "get a list of all the feature toggles" in {
       val allFlags: Seq[FeatureFlag] = (for {
-        _      <- insert(FeatureFlagSerialised(TestToggleA.name, true, TestToggleA.description))
+        _      <- insert(FeatureFlagSerialised(TestToggleA.name, true))
         result <- repository.getAllFeatureFlags
       } yield result).futureValue
 
       allFlags mustBe List(
-        FeatureFlag(TestToggleA, true, TestToggleA.description)
+        FeatureFlag(TestToggleA, true)
       )
     }
 
     "get a deleted toggle" in {
       val allFlags: Seq[FeatureFlag] = (for {
-        _      <- insert(FeatureFlagSerialised("invalid", true, Some("invalid")))
+        _      <- insert(FeatureFlagSerialised("invalid", true))
         result <- repository.getAllFeatureFlags
       } yield result).futureValue
 
@@ -145,7 +145,7 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
   "deleteFeatureFlag" must {
     "delete a mongo record" in {
       val allFlags: Boolean = (for {
-        _      <- insert(FeatureFlagSerialised(TestToggleA.name, true, TestToggleA.description))
+        _      <- insert(FeatureFlagSerialised(TestToggleA.name, true))
         result <- repository.deleteFeatureFlag(TestToggleA)
       } yield result).futureValue
 
@@ -158,8 +158,8 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
     "not allow duplicates" in {
       val result = intercept[MongoWriteException] {
         await(for {
-          _ <- insert(FeatureFlagSerialised(TestToggleA.name, true, TestToggleA.description))
-          _ <- insert(FeatureFlagSerialised(TestToggleA.name, false, TestToggleB.description))
+          _ <- insert(FeatureFlagSerialised(TestToggleA.name, true))
+          _ <- insert(FeatureFlagSerialised(TestToggleA.name, false))
         } yield true)
       }
       result.getCode mustBe 11000

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mongoFeatureToggles.internal.model
+package uk.gov.hmrc.mongoFeatureToggles.model
 
 import play.api.libs.json.{Format, Json}
 
-private[mongoFeatureToggles] case class FeatureFlagSerialised(
-  name: String,
-  isEnabled: Boolean
-)
+object Environment extends Enumeration {
+  type Environment = Value
 
-private[mongoFeatureToggles] object FeatureFlagSerialised {
-  implicit val formats: Format[FeatureFlagSerialised] = Json.format[FeatureFlagSerialised]
+  val Local        = Value("Local")
+  val Dev          = Value("Dev")
+  val Staging      = Value("Staging")
+  val Qa           = Value("Qa")
+  val Production   = Value("Production")
+  val ExternalTest = Value("ExternalTest")
+
+  implicit val format: Format[Environment] = Json.formatEnum(this)
 }
