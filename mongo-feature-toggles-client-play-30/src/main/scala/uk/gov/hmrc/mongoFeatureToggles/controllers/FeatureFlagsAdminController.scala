@@ -17,7 +17,6 @@
 package uk.gov.hmrc.mongoFeatureToggles.controllers
 
 import play.api.libs.json.{JsBoolean, Json}
-import play.api.mvc.Results.Ok
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.mongoFeatureToggles.internal.actions.InternalAuthAction
 import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName}
