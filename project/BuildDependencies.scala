@@ -3,7 +3,7 @@ import sbt.*
 
 private object BuildDependencies {
 
-  val hmrcMongoVersion          = "2.6.0"
+  val hmrcMongoVersion          = "2.3.0"
   val bootstrapVersion          = "9.11.0"
   private val internalAuthClientVersion = "3.1.0"
   private val collectionCompatVersion   = "2.12.0"
