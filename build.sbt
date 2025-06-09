@@ -20,26 +20,25 @@ import sbt.*
 
 val libName = "mongo-feature-toggles-client"
 
-val scala3    = "3.3.5"
-val scala2_13 = "2.13.16"
+val scala3    = "3.3.6"
 
 // Disable multiple project tests running at the same time, since notablescan flag is a global setting.
 // https://www.scala-sbt.org/1.x/docs/Parallel-Execution.html
 Global / concurrentRestrictions += Tags.limitSum(1, Tags.Test, Tags.Untagged)
 
-ThisBuild / scalaVersion       := scala2_13
-ThisBuild / majorVersion       := 1
+ThisBuild / scalaVersion       := scala3
+ThisBuild / majorVersion       := 2
 ThisBuild / isPublicArtefact   := true
 ThisBuild / organization := "uk.gov.hmrc"
 ThisBuild / scalafmtOnCompile := true
 ThisBuild / scalacOptions ++= Seq(
   "-feature",
-  //"-Werror", //FIXME this option is disabled because of "Flag -<flag_name> set repeatedly" error
-  "-Wconf:src=routes/.*:s"
+  "-Xfatal-warnings",
+  "-Wconf:src=routes/.*:s",
+  "-Wconf:msg=Flag.*repeatedly:s",
 )
 
 lazy val projects: Seq[ProjectReference] = sys.env.get("PLAY_VERSION") match {
-  case Some("2.9") => Seq(play29, play29Test)
   case _ => Seq(play30, play30Test)
 }
 
@@ -61,34 +60,13 @@ def copyPlay30Routes(module: Project) = Seq(
   }
 )
 
-lazy val play29 = Project(s"$libName-play-29", file(s"$libName-play-29"))
-  .enablePlugins(PlayScala)
-  .disablePlugins(PlayLayoutPlugin)
-  .settings(
-    routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"),
-    ScoverageSettings(),
-    crossScalaVersions := Seq(scala2_13),
-    libraryDependencies ++= BuildDependencies.compile29 ++ BuildDependencies.test29,
-    copyPlay30Sources(play30),
-    copyPlay30Routes(play30)
-  )
-
-lazy val play29Test = Project(s"$libName-test-play-29", file(s"$libName-test-play-29"))
-  .settings(libraryDependencies ++=
-    Seq(
-      "uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVersion29" % hmrcMongoVersion,
-      "uk.gov.hmrc"       %% s"bootstrap-test-$playVersion29"  % bootstrapVersion
-    )
-  )
-  .dependsOn(play29)
-
 lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
   .enablePlugins(PlayScala)
   .disablePlugins(PlayLayoutPlugin)
   .settings(
     routesImport ++= Seq("uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName"),
     ScoverageSettings(),
-    crossScalaVersions := Seq(scala2_13, scala3),
+    crossScalaVersions := Seq(scala3),
     libraryDependencies ++= BuildDependencies.compile30 ++ BuildDependencies.test30,
     Compile / routes / sources ++= {
       val dirs = (Compile / unmanagedResourceDirectories).value
@@ -98,7 +76,7 @@ lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
 
 lazy val play30Test = Project(s"$libName-test-play-30", file(s"$libName-test-play-30"))
   .settings(
-    crossScalaVersions := Seq(scala2_13, scala3),
+    crossScalaVersions := Seq(scala3),
     libraryDependencies ++= Seq(
       "uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVersion30" % hmrcMongoVersion,
       "uk.gov.hmrc"       %% s"bootstrap-test-$playVersion30"  % bootstrapVersion

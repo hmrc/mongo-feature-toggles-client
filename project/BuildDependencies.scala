@@ -4,8 +4,8 @@ import sbt.*
 private object BuildDependencies {
 
   val hmrcMongoVersion          = "2.6.0"
-  val bootstrapVersion          = "9.11.0"
-  private val internalAuthClientVersion = "3.1.0"
+  val bootstrapVersion          = "9.13.0"
+  private val internalAuthClientVersion = "4.0.0"
   private val collectionCompatVersion   = "2.12.0"
 
   val playVersion29 = "play-29"
