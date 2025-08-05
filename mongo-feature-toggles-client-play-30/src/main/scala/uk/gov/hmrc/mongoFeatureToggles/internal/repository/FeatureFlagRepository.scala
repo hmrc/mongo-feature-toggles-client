@@ -27,10 +27,8 @@ import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
 import uk.gov.hmrc.mongoFeatureToggles.internal.model.{DeletedToggle, FeatureFlagSerialised}
 import uk.gov.hmrc.mongoFeatureToggles.model
 import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName}
-import uk.gov.hmrc.play.http.logging.Mdc
+import uk.gov.hmrc.mdc.Mdc
 import org.mongodb.scala.ToSingleObservablePublisher
-import org.mongodb.scala.SingleObservableFuture
-import org.mongodb.scala.ObservableFuture
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
