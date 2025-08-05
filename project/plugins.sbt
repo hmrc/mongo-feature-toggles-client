@@ -2,7 +2,7 @@ resolvers += "HMRC-open-artefacts-maven" at "https://open.artefacts.tax.service.
 resolvers += Resolver.url("HMRC-open-artefacts-ivy", url("https://open.artefacts.tax.service.gov.uk/ivy2"))(Resolver.ivyStylePatterns)
 
 sys.env.get("PLAY_VERSION") match {
-  case _           => addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.7")
+  case _           => addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.8")
 }
 
 addSbtPlugin("uk.gov.hmrc"   % "sbt-auto-build"     % "3.24.0")
