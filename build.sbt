@@ -20,7 +20,7 @@ import sbt.*
 
 val libName = "mongo-feature-toggles-client"
 
-val scala3    = "3.3.6"
+val scala3    = "3.3.7"
 
 // Disable multiple project tests running at the same time, since notablescan flag is a global setting.
 // https://www.scala-sbt.org/1.x/docs/Parallel-Execution.html

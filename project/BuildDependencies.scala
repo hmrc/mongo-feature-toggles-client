@@ -3,10 +3,10 @@ import sbt.*
 
 private object BuildDependencies {
 
-  val hmrcMongoVersion          = "2.7.0"
-  val bootstrapVersion          = "10.1.0"
-  private val internalAuthClientVersion = "4.1.0"
-  private val collectionCompatVersion   = "2.13.0"
+  val hmrcMongoVersion          = "2.10.0"
+  val bootstrapVersion          = "10.4.0"
+  private val internalAuthClientVersion = "4.3.0"
+  private val collectionCompatVersion   = "2.14.0"
 
   val playVersion29 = "play-29"
   val playVersion30 = "play-30"
