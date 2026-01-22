@@ -71,6 +71,10 @@ play.modules.enabled += "config.HmrcModule"
 ```text
 -> /featureFlags mongoFeatureTogglesAdmin.Routes
 ```
+if admin.routes does not exist, add an entry in prod.routes
+```text
+->         /admin                     admin.Routes
+```
 
 ### Add the additional test-only routes in testOnlyDoNotUseInAppConf.routes
 ```text
