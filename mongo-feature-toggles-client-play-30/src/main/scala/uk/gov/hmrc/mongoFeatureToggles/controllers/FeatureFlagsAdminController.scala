@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.mongoFeatureToggles.controllers
 
-import play.api.libs.json.{JsBoolean, Json}
+import play.api.libs.json.{JsBoolean, Json, Writes}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.mongoFeatureToggles.internal.actions.InternalAuthAction
-import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName}
+import uk.gov.hmrc.mongoFeatureToggles.internal.config.FeatureFlagsConfig
+import uk.gov.hmrc.mongoFeatureToggles.internal.model.{FeatureFlagAdmin, FeatureFlagSerialised}
 import uk.gov.hmrc.mongoFeatureToggles.services.FeatureFlagService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
 
@@ -29,6 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class FeatureFlagsAdminController @Inject() (
   auth: InternalAuthAction,
   featureFlagService: FeatureFlagService,
+  featureFlagsConfig: FeatureFlagsConfig,
   mcc: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendController(mcc) {
@@ -36,28 +38,39 @@ class FeatureFlagsAdminController @Inject() (
   def get: Action[AnyContent] = Action.async {
     featureFlagService.getAll
       .map { flags =>
-        Ok(Json.toJson(flags))
+        Ok(Json.toJson(flags)(using Writes.set(using FeatureFlagAdmin.writesToThirdParties)))
       }
   }
 
-  def put(flagName: FeatureFlagName): Action[AnyContent] = auth().async { request =>
-    request.body.asJson match {
-      case Some(JsBoolean(enabled)) =>
-        featureFlagService
-          .set(flagName, enabled)
-          .map(_ => NoContent)
-      case _                        =>
-        Future.successful(BadRequest("Request body was invalid"))
+  def put(flagName: String): Action[AnyContent] = auth().async { request =>
+    featureFlagsConfig.get(flagName) match {
+      case None => Future.successful(BadRequest(s"the feature flag `$flagName` does not exist`"))
+      case _    =>
+        request.body.asJson match {
+          case Some(JsBoolean(enabled)) =>
+            featureFlagService
+              .set(flagName, enabled)
+              .map(_ => NoContent)
+          case _                        =>
+            Future.successful(BadRequest("Request body was invalid"))
+        }
     }
   }
 
   def putAll: Action[AnyContent] = auth().async { request =>
     request.body.asJson.fold(Future.successful(BadRequest("Request body was invalid"))) { json =>
-      val flags = json
-        .as[Seq[FeatureFlag]]
-        .map(flag => flag.name -> flag.isEnabled)
-        .toMap
-      featureFlagService.setAll(flags).map(_ => NoContent)
+      val featureFlagsRequest = json
+        .as[Seq[FeatureFlagSerialised]]
+
+      featureFlagsRequest
+        .partitionMap { featureFlag =>
+          featureFlagsConfig.get(featureFlag.name).toRight(featureFlag.name)
+        } match {
+        case (errors, _) if errors.nonEmpty =>
+          Future.successful(BadRequest(s"The feature flag(s) ${errors.mkString(",")} do not exist"))
+        case _                              =>
+          featureFlagService.setAll(featureFlagsRequest.toSet).map(_ => NoContent)
+      }
     }
   }
 }

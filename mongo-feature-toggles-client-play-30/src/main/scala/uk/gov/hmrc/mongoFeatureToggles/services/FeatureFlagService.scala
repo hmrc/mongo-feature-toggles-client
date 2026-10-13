@@ -19,41 +19,55 @@ package uk.gov.hmrc.mongoFeatureToggles.services
 import cats.data.EitherT
 import play.api.Logging
 import play.api.cache.AsyncCacheApi
-import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
-import uk.gov.hmrc.mongoFeatureToggles.internal.model.DeletedToggle
+import uk.gov.hmrc.mongoFeatureToggles.internal.config.{AppConfig, FeatureFlagsConfig}
+import uk.gov.hmrc.mongoFeatureToggles.internal.model.{FeatureFlagAdmin, FeatureFlagDefinition, FeatureFlagSerialised}
 import uk.gov.hmrc.mongoFeatureToggles.internal.repository.FeatureFlagRepository
-import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName, FeatureFlagNamesLibrary}
+import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName}
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.duration.{Duration, FiniteDuration, SECONDS => Seconds}
+import scala.concurrent.duration.{Duration, FiniteDuration, SECONDS as Seconds}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class FeatureFlagService @Inject() (
   appConfig: AppConfig,
+  toggleConfig: FeatureFlagsConfig,
   featureFlagRepository: FeatureFlagRepository,
   cache: AsyncCacheApi
 )(implicit
   ec: ExecutionContext
 ) extends Logging {
-  val cacheValidFor: FiniteDuration   =
+  val cacheValidFor: FiniteDuration =
     Duration(appConfig.cacheTtlInSeconds, Seconds)
-  private val allFeatureFlagsCacheKey = "*$*$allFeatureFlags*$*$"
 
-  def set(flagName: FeatureFlagName, enabled: Boolean): Future[Boolean] =
+  private[mongoFeatureToggles] def set(flagName: String, enabled: Boolean): Future[Boolean] =
     for {
-      _      <- cache.remove(flagName.toString)
-      _      <- cache.remove(allFeatureFlagsCacheKey)
-      result <- featureFlagRepository.setFeatureFlag(flagName, enabled)
+      _      <- cache.remove(flagName)
+      result <- featureFlagRepository.setFeatureFlag(FeatureFlagSerialised(flagName, enabled))
       // blocking thread to let time to other containers to update their cache
       _      <- Future.successful(Thread.sleep(appConfig.cacheTtlInSeconds * 1000))
     } yield result
 
   private def innerGet(flagName: FeatureFlagName): Future[FeatureFlag] =
-    cache.getOrElseUpdate(flagName.toString, cacheValidFor) {
-      featureFlagRepository
-        .getFeatureFlag(flagName)
-        .map(_.getOrElse(FeatureFlag(flagName, flagName.defaultState)))
+    toggleConfig.get(flagName.name) match {
+      case None                   =>
+        throw new RuntimeException(s"no definition for toggle `$flagName` in application.conf or app-config-*")
+      case Some(toggleDefinition) =>
+        if (toggleDefinition.isRemote) {
+          logger.info(s"Found toggle $flagName in config with source set to mongo")
+          cache.getOrElseUpdate(flagName.toString, cacheValidFor) {
+            featureFlagRepository
+              .getFeatureFlag(toggleDefinition)
+              .map(
+                _.fold(
+                  FeatureFlag(flagName, toggleDefinition.remoteConfiguration.fold(false)(_.defaultStatus))
+                )(featureFlag => FeatureFlag(flagName, featureFlag.isEnabled))
+              )
+          }
+        } else {
+          logger.info(s"Found toggle $flagName in config with source set to config")
+          Future.successful(FeatureFlag(flagName, toggleDefinition.localConfiguration.fold(false)(_.isEnabled)))
+        }
     }
 
   def get(flagName: FeatureFlagName): Future[FeatureFlag] = innerGet(flagName)
@@ -61,35 +75,43 @@ class FeatureFlagService @Inject() (
   def getAsEitherT[A](flagName: FeatureFlagName): EitherT[Future, A, FeatureFlag] =
     EitherT[Future, A, FeatureFlag](innerGet(flagName).map(Right(_)))
 
-  def getAll: Future[List[FeatureFlag]] =
-    cache.getOrElseUpdate(allFeatureFlagsCacheKey, cacheValidFor) {
-      featureFlagRepository.getAllFeatureFlags.map { mongoFlags =>
-        val (deletedFlags, validMongoFlags) = mongoFlags.partition(_.name.isInstanceOf[DeletedToggle])
+  private[mongoFeatureToggles] def getAll: Future[Set[FeatureFlagAdmin]] = {
+    val featureFlagsFromConfig: Set[FeatureFlagDefinition] = toggleConfig.getAllToggles
 
-        deletedFlags.foreach { flag =>
-          featureFlagRepository.deleteFeatureFlag(flag.name).map {
-            case true  => logger.warn(s"Flag `${flag.name}` has been deleted from Mongo")
-            case false => logger.error(s"Flag `${flag.name}` could not be deleted from Mongo")
-          }
+    featureFlagRepository.getAllFeatureFlags.map { featureFlagsInMongo =>
+      val mongoByName  = featureFlagsInMongo.map(flag => flag.name -> flag).toMap
+      val configByName = featureFlagsFromConfig.map(flag => flag.name -> flag).toMap
+
+      val intersect              =
+        featureFlagsFromConfig.filter(flag => mongoByName.contains(flag.name))
+      val featureFlagsNotInMongo =
+        featureFlagsFromConfig.filterNot(flag => mongoByName.contains(flag.name))
+      val deletedFeatureFlags    =
+        featureFlagsInMongo.filterNot(flag => configByName.contains(flag.name))
+
+      deletedFeatureFlags.foreach { flag =>
+        featureFlagRepository.deleteFeatureFlag(flag).map {
+          case true  => logger.warn(s"Flag `${flag.name}` has been deleted from Mongo")
+          case false => logger.error(s"Flag `${flag.name}` could not be deleted from Mongo")
         }
+      }
 
-        FeatureFlagNamesLibrary.getAllFlags
-          .foldLeft(validMongoFlags.reverse) { (featureFlags, missingFlag) =>
-            if (featureFlags.map(_.name).contains(missingFlag)) {
-              featureFlags
-            } else {
-              FeatureFlag(missingFlag, missingFlag.defaultState) :: featureFlags
-            }
-          }
-          .reverse
+      intersect.map { flag =>
+        if (flag.isRemote) {
+          FeatureFlagAdmin(flag, mongoByName(flag.name).isEnabled)
+        } else {
+          FeatureFlagAdmin(flag, flag.localConfiguration.fold(false)(_.isEnabled))
+        }
+      } ++ featureFlagsNotInMongo.map { flag =>
+        FeatureFlagAdmin(flag, flag.remoteConfiguration.fold(false)(_.defaultStatus))
       }
     }
+  }
 
-  def setAll(flags: Map[FeatureFlagName, Boolean]): Future[Unit] =
+  private[mongoFeatureToggles] def setAll(flags: Set[FeatureFlagSerialised]): Future[Unit] =
     Future
-      .sequence(flags.keys.map(flag => cache.remove(flag.toString)))
+      .sequence(flags.map(flag => cache.remove(flag.name)))
       .flatMap { _ =>
-        cache.remove(allFeatureFlagsCacheKey)
         featureFlagRepository.setFeatureFlags(flags)
       }
       .map { _ =>

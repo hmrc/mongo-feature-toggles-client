@@ -17,7 +17,6 @@
 package uk.gov.hmrc.mongoFeatureToggles.controllers.testOnly
 
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName
 import uk.gov.hmrc.mongoFeatureToggles.services.FeatureFlagService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
 
@@ -31,7 +30,7 @@ class FeatureFlagsTestOnlyController @Inject() (
 )(implicit ec: ExecutionContext)
     extends FrontendController(mcc) {
 
-  def setFlag(featureFlagName: FeatureFlagName, isEnabled: Boolean): Action[AnyContent] = Action.async {
+  def setFlag(featureFlagName: String, isEnabled: Boolean): Action[AnyContent] = Action.async {
     featureFlagService.set(featureFlagName, isEnabled).map {
       case true  => Ok(s"Flag $featureFlagName set to $isEnabled")
       case false => InternalServerError(s"Error while setting flag $featureFlagName to $isEnabled")

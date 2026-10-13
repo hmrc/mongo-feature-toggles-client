@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,4 @@
 
 package uk.gov.hmrc.mongoFeatureToggles.model
 
-import play.api.libs.json._
-
 case class FeatureFlag(name: FeatureFlagName, isEnabled: Boolean)
-
-object FeatureFlag {
-  implicit final val format: OFormat[FeatureFlag] = Json.format[FeatureFlag]
-}

@@ -24,11 +24,12 @@ import play.api.Application
 import play.api.cache.AsyncCacheApi
 import play.api.inject.bind
 import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
+import uk.gov.hmrc.mongoFeatureToggles.internal.model.FeatureFlagSerialised
 import uk.gov.hmrc.mongoFeatureToggles.internal.repository.FeatureFlagRepository
-import uk.gov.hmrc.mongoFeatureToggles.testUtils.{BaseSpec, TestToggleA, TestToggleB}
+import uk.gov.hmrc.mongoFeatureToggles.testUtils.BaseSpec
 
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 class FeatureFlagServiceSpec extends BaseSpec {
 
@@ -52,18 +53,17 @@ class FeatureFlagServiceSpec extends BaseSpec {
   "set" must {
     "set a feature flag" in {
       when(mockCache.remove(any())).thenReturn(Future.successful(Done))
-      when(mockFeatureFlagRepository.setFeatureFlag(any(), any())).thenReturn(Future.successful(true))
+      when(mockFeatureFlagRepository.setFeatureFlag(any())).thenReturn(Future.successful(true))
 
-      val result = featureFlagService.set(TestToggleA, true).futureValue
+      val result = featureFlagService.set("toggle-a", true).futureValue
 
       result mustBe true
       val eventCaptor             = ArgumentCaptor.forClass(classOf[String])
-      verify(mockCache, times(2)).remove(eventCaptor.capture())
-      verify(mockFeatureFlagRepository, times(1)).setFeatureFlag(any(), any())
+      verify(mockCache, times(1)).remove(eventCaptor.capture())
+      verify(mockFeatureFlagRepository, times(1)).setFeatureFlag(any())
       val arguments: List[String] = eventCaptor.getAllValues.asScala.toList
       arguments.sorted mustBe List(
-        TestToggleA.name,
-        "*$*$allFeatureFlags*$*$"
+        "toggle-a"
       ).sorted
     }
   }
@@ -76,21 +76,20 @@ class FeatureFlagServiceSpec extends BaseSpec {
 
       val result = featureFlagService
         .setAll(
-          Map(TestToggleA -> false, TestToggleB -> true)
+          Set(FeatureFlagSerialised("toggle-a", false), FeatureFlagSerialised("toggle-b", true))
         )
         .futureValue
 
       result mustBe ((): Unit)
 
       val eventCaptor = ArgumentCaptor.forClass(classOf[String])
-      verify(mockCache, times(3)).remove(eventCaptor.capture())
+      verify(mockCache, times(2)).remove(eventCaptor.capture())
       verify(mockFeatureFlagRepository, times(1)).setFeatureFlags(any())
 
       val arguments: List[String] = eventCaptor.getAllValues.asScala.toList
       arguments.sorted mustBe List(
-        TestToggleA.name,
-        TestToggleB.name,
-        "*$*$allFeatureFlags*$*$"
+        "toggle-a",
+        "toggle-b"
       ).sorted
     }
   }

@@ -22,18 +22,13 @@ import play.api.Application
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
-import uk.gov.hmrc.mongoFeatureToggles.internal.model.{DeletedToggle, FeatureFlagSerialised}
-import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName, FeatureFlagNamesLibrary}
+import uk.gov.hmrc.mongoFeatureToggles.internal.model.{FeatureFlagAdmin, FeatureFlagDefinition, FeatureFlagSerialised, RemoteConfiguration}
 import play.api.inject.bind
-import uk.gov.hmrc.mongoFeatureToggles.testUtils.{BaseSpec, TestToggleA, TestToggleB}
+import uk.gov.hmrc.mongoFeatureToggles.testUtils.BaseSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
-class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepositorySupport[FeatureFlagSerialised] {
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    FeatureFlagNamesLibrary.addFlags(List(TestToggleA, TestToggleB))
-  }
+class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepositorySupport[FeatureFlagSerialised] {
 
   override protected lazy val optSchema: Option[BsonDocument] = Some(BsonDocument("""
       { bsonType: "object"
@@ -60,97 +55,78 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
 
   "getFlag" must {
     "return None if there is no record" in {
-      val result = repository.getFeatureFlag(TestToggleA).futureValue
+      val result = repository
+        .getFeatureFlag(
+          FeatureFlagDefinition("toggle-name", Some("Description"), Some(RemoteConfiguration(false)), None)
+        )
+        .futureValue
 
       result mustBe None
     }
 
     "return a flag if there is a record" in {
-      val result = (for {
-        _      <- insert(FeatureFlagSerialised(TestToggleA.name, true))
-        result <- repository.getFeatureFlag(TestToggleA)
+      val featureFlagDefinition =
+        FeatureFlagDefinition("toggle-name", Some("Description"), Some(RemoteConfiguration(false)), None)
+      val result                = (for {
+        _      <- insert(FeatureFlagSerialised("toggle-name", true))
+        result <- repository
+                    .getFeatureFlag(featureFlagDefinition)
       } yield result).futureValue
 
-      result mustBe Some(FeatureFlag(TestToggleA, true))
+      result mustBe Some(FeatureFlagAdmin(featureFlagDefinition, true))
     }
   }
 
   "setFeatureFlag" must {
     "insert a record in mongo" in {
       val result = (for {
-        _      <- repository.setFeatureFlag(TestToggleA, true)
+        _      <- repository.setFeatureFlag(FeatureFlagSerialised("toggle-name", true))
         result <- findAll()
       } yield result).futureValue
 
       result mustBe List(
-        FeatureFlagSerialised(TestToggleA.name, true)
+        FeatureFlagSerialised("toggle-name", true)
       )
     }
 
     "replace a record not create a new one" in {
       val result = (for {
-        _      <- repository.setFeatureFlag(TestToggleA, true)
-        _      <- repository.setFeatureFlag(TestToggleA, false)
+        _      <- repository.setFeatureFlag(FeatureFlagSerialised("toggle-name", true))
+        _      <- repository.setFeatureFlag(FeatureFlagSerialised("toggle-name", true))
         result <- findAll()
       } yield result).futureValue
 
       result mustBe List(
-        FeatureFlagSerialised(TestToggleA.name, false)
+        FeatureFlagSerialised("toggle-name", true)
       )
     }
   }
 
   "setFeatureFlags" must {
     "set multiple records" in {
-      val expectedFlags: Map[FeatureFlagName, Boolean] =
-        Map(TestToggleA -> false, TestToggleB -> true)
-      val result                                       = (for {
-        _      <- repository.setFeatureFlags(expectedFlags)
+      val toggles = Set(
+        FeatureFlagSerialised("toggle-a", true),
+        FeatureFlagSerialised("toggle-b", false)
+      )
+      val result  = (for {
+        _      <- repository.setFeatureFlags(toggles)
         result <- findAll()
-      } yield result).futureValue
+      } yield result).futureValue.toSet
 
-      result.sortBy(_.name) mustBe expectedFlags
-        .map { case (key, value) =>
-          FeatureFlagSerialised(key.name, value)
-        }
-        .toList
-        .sortBy(_.name)
+      result mustBe toggles
     }
   }
 
   "getAllFeatureFlags" must {
     "get a list of all the feature toggles" in {
-      val allFlags: Seq[FeatureFlag] = (for {
-        _      <- insert(FeatureFlagSerialised(TestToggleA.name, true))
+      val allFlags = (for {
+        _      <- insert(FeatureFlagSerialised("toggle-a", true))
         result <- repository.getAllFeatureFlags
       } yield result).futureValue
 
-      allFlags mustBe List(
-        FeatureFlag(TestToggleA, true)
+      allFlags mustBe Set(
+        FeatureFlagSerialised("toggle-a", true)
       )
-    }
-
-    "get a deleted toggle" in {
-      val allFlags: Seq[FeatureFlag] = (for {
-        _      <- insert(FeatureFlagSerialised("invalid", true))
-        result <- repository.getAllFeatureFlags
-      } yield result).futureValue
-
-      allFlags mustBe List(
-        FeatureFlag(DeletedToggle("invalid"), false)
-      )
-    }
-  }
-
-  "deleteFeatureFlag" must {
-    "delete a mongo record" in {
-      val allFlags: Boolean = (for {
-        _      <- insert(FeatureFlagSerialised(TestToggleA.name, true))
-        result <- repository.deleteFeatureFlag(TestToggleA)
-      } yield result).futureValue
-
-      allFlags mustBe true
-      findAll().futureValue.length mustBe 0
     }
   }
 
@@ -158,12 +134,12 @@ class FeatureFlagRepositorySpec extends BaseSpec with DefaultPlayMongoRepository
     "not allow duplicates" in {
       val result = intercept[MongoWriteException] {
         await(for {
-          _ <- insert(FeatureFlagSerialised(TestToggleA.name, true))
-          _ <- insert(FeatureFlagSerialised(TestToggleA.name, false))
+          _ <- insert(FeatureFlagSerialised("toggle-a", true))
+          _ <- insert(FeatureFlagSerialised("toggle-a", false))
         } yield true)
       }
       result.getCode mustBe 11000
-      result.getError.getMessage mustBe s"""E11000 duplicate key error collection: $databaseName.admin-feature-flags index: name dup key: { name: "$TestToggleA" }"""
+      result.getError.getMessage mustBe s"""E11000 duplicate key error collection: $databaseName.admin-feature-flags index: name dup key: { name: "toggle-a" }"""
     }
   }
 }

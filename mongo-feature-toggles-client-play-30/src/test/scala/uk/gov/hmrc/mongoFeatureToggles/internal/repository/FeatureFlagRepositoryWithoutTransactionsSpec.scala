@@ -22,19 +22,13 @@ import play.api.inject.bind
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.mongoFeatureToggles.internal.model.FeatureFlagSerialised
-import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlagName, FeatureFlagNamesLibrary}
-import uk.gov.hmrc.mongoFeatureToggles.testUtils.{BaseSpec, TestToggleA, TestToggleB}
+import uk.gov.hmrc.mongoFeatureToggles.testUtils.BaseSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class FeatureFlagRepositoryWithoutTransactionsSpec
     extends BaseSpec
     with DefaultPlayMongoRepositorySupport[FeatureFlagSerialised] {
-
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    FeatureFlagNamesLibrary.addFlags(List(TestToggleA, TestToggleB))
-  }
 
   override protected lazy val optSchema: Option[BsonDocument] = Some(BsonDocument("""
       { bsonType: "object"
@@ -64,19 +58,14 @@ class FeatureFlagRepositoryWithoutTransactionsSpec
 
   "setFeatureFlags" must {
     "set multiple records" in {
-      val expectedFlags: Map[FeatureFlagName, Boolean] =
-        Map(TestToggleA -> false, TestToggleB -> true)
-      val result                                       = (for {
+      val expectedFlags: Set[FeatureFlagSerialised] =
+        Set(FeatureFlagSerialised("toggle-a", true), FeatureFlagSerialised("toggle-b", false))
+      val result                                    = (for {
         _      <- repository.setFeatureFlags(expectedFlags)
         result <- findAll()
-      } yield result).futureValue
+      } yield result).futureValue.toSet
 
-      result.sortBy(_.name) mustBe expectedFlags
-        .map { case (key, value) =>
-          FeatureFlagSerialised(key.name, value)
-        }
-        .toList
-        .sortBy(_.name)
+      result mustBe expectedFlags
     }
   }
 }

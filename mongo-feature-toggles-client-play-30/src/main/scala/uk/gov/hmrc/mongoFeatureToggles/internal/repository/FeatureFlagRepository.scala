@@ -16,19 +16,19 @@
 
 package uk.gov.hmrc.mongoFeatureToggles.internal.repository
 
-import org.mongodb.scala.model.Filters._
-import org.mongodb.scala.model._
+import org.mongodb.scala.model.Filters.*
+import org.mongodb.scala.model.*
 import play.api.Logging
-import play.api.libs.json.{Format, JsError, JsString, JsSuccess}
+import play.api.libs.json.Format
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.transaction.{TransactionConfiguration, Transactions}
 import uk.gov.hmrc.mongoFeatureToggles.internal.config.AppConfig
-import uk.gov.hmrc.mongoFeatureToggles.internal.model.{DeletedToggle, FeatureFlagSerialised}
-import uk.gov.hmrc.mongoFeatureToggles.model
-import uk.gov.hmrc.mongoFeatureToggles.model.{FeatureFlag, FeatureFlagName}
+import uk.gov.hmrc.mongoFeatureToggles.internal.model.{FeatureFlagAdmin, FeatureFlagSerialised}
+import uk.gov.hmrc.mongoFeatureToggles.internal.model.FeatureFlagDefinition
 import uk.gov.hmrc.mdc.Mdc
 import org.mongodb.scala.ToSingleObservablePublisher
+import org.mongodb.scala.bson.BsonDocument
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,53 +50,54 @@ private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
             .name("name")
             .unique(true)
         )
-      )
+      ),
+      optSchema = Some(BsonDocument("""
+          { bsonType: "object"
+          , required: [ "_id", "name", "isEnabled" ]
+          , properties:
+            { _id       : { bsonType: "objectId" }
+            , name      : { bsonType: "string" }
+            , isEnabled : { bsonType: "bool" }
+            }
+          }
+        """))
     )
     with Transactions
     with Logging {
 
   private implicit val tc: TransactionConfiguration = TransactionConfiguration.strict
 
-  def deleteFeatureFlag(featureFlagName: FeatureFlagName): Future[Boolean] =
+  def deleteFeatureFlag(featureFlagSerialised: FeatureFlagSerialised): Future[Boolean] =
     collection
-      .deleteOne(Filters.equal("name", featureFlagName.name))
+      .deleteOne(Filters.equal("name", featureFlagSerialised.name))
       .map(_.wasAcknowledged())
       .toSingle()
       .toFuture()
 
-  def getFeatureFlag(featureFlagName: FeatureFlagName): Future[Option[FeatureFlag]] =
+  def getFeatureFlag(featureFlagDefinition: FeatureFlagDefinition): Future[Option[FeatureFlagAdmin]] =
     Mdc.preservingMdc(
       collection
-        .find(Filters.equal("name", featureFlagName.name))
+        .find(Filters.equal("name", featureFlagDefinition.name))
         .headOption()
         .map(
-          _.map(flag => model.FeatureFlag(JsString(flag.name).as[FeatureFlagName], flag.isEnabled))
+          _.map(flag => FeatureFlagAdmin(featureFlagDefinition, flag.isEnabled))
         )
     )
 
-  def getAllFeatureFlags: Future[List[FeatureFlag]] =
+  def getAllFeatureFlags: Future[Set[FeatureFlagSerialised]] =
     Mdc.preservingMdc(
       collection
         .find()
         .toFuture()
-        .map(
-          _.toList.map { flag =>
-            JsString(flag.name).validate[FeatureFlagName] match {
-              case JsSuccess(value, _) => FeatureFlag(value, flag.isEnabled)
-              case JsError(_)          =>
-                logger.warn(s"The feature flag `${flag.name}` does not exist anymore")
-                FeatureFlag(DeletedToggle(flag.name), isEnabled = false)
-            }
-          }
-        )
+        .map(_.toSet)
     )
 
-  def setFeatureFlag(featureFlagName: FeatureFlagName, enabled: Boolean): Future[Boolean] =
+  def setFeatureFlag(featureFlag: FeatureFlagSerialised): Future[Boolean] =
     Mdc.preservingMdc(
       collection
         .replaceOne(
-          filter = equal("name", featureFlagName.name),
-          replacement = FeatureFlagSerialised(featureFlagName.name, enabled),
+          filter = equal("name", featureFlag.name),
+          replacement = featureFlag,
           options = ReplaceOptions().upsert(true)
         )
         .map(_.wasAcknowledged())
@@ -104,28 +105,20 @@ private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
         .toFuture()
     )
 
-  def setFeatureFlags(flags: Map[FeatureFlagName, Boolean]): Future[Unit] = {
-    val featureFlags = flags.map { case (flag, status) =>
-      FeatureFlagSerialised(flag.toString, status)
-    }.toList
+  def setFeatureFlags(flags: Set[FeatureFlagSerialised]): Future[Unit] =
     Mdc.preservingMdc(
       if (appConfig.useMongoTransactions) {
         withSessionAndTransaction(session =>
           for {
-            _ <- collection.deleteMany(session, filter = in("name", flags.keys.toSeq.map(_.name): _*)).toFuture()
-            _ <- collection.insertMany(session, featureFlags).toFuture()
+            _ <- collection.deleteMany(session, filter = in("name", flags.map(_.name).toSeq: _*)).toFuture()
+            _ <- collection.insertMany(session, flags.toSeq).toFuture()
           } yield ()
         )
       } else {
         logger.warn("Mongo transactions are disabled")
         Future
-          .sequence(
-            flags.map { case (flag: FeatureFlagName, enabled: Boolean) =>
-              setFeatureFlag(flag, enabled)
-            }
-          )
+          .sequence(flags.map(setFeatureFlag))
           .map(_ => ())
       }
     )
-  }
 }
