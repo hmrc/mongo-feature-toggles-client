@@ -17,23 +17,29 @@
 package uk.gov.hmrc.mongoFeatureToggles.controllers.testOnly
 
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import uk.gov.hmrc.mongoFeatureToggles.internal.config.FeatureFlagsConfig
 import uk.gov.hmrc.mongoFeatureToggles.services.FeatureFlagService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
 class FeatureFlagsTestOnlyController @Inject() (
   mcc: MessagesControllerComponents,
-  featureFlagService: FeatureFlagService
+  featureFlagService: FeatureFlagService,
+  featureFlagsConfig: FeatureFlagsConfig
 )(implicit ec: ExecutionContext)
     extends FrontendController(mcc) {
 
   def setFlag(featureFlagName: String, isEnabled: Boolean): Action[AnyContent] = Action.async {
-    featureFlagService.set(featureFlagName, isEnabled).map {
-      case true  => Ok(s"Flag $featureFlagName set to $isEnabled")
-      case false => InternalServerError(s"Error while setting flag $featureFlagName to $isEnabled")
+    featureFlagsConfig.get(featureFlagName) match {
+      case None => Future.successful(BadRequest(s"the feature flag `$featureFlagName` does not exist`"))
+      case Some(_) =>
+        featureFlagService.set(featureFlagName, isEnabled).map {
+          case true => Ok(s"Flag $featureFlagName set to $isEnabled")
+          case false => InternalServerError(s"Error while setting flag $featureFlagName to $isEnabled")
+        }
     }
   }
 }
