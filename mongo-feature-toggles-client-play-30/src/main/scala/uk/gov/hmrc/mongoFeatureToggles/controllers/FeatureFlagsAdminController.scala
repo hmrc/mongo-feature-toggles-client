@@ -44,8 +44,14 @@ class FeatureFlagsAdminController @Inject() (
 
   def put(flagName: String): Action[AnyContent] = auth().async { request =>
     featureFlagsConfig.get(flagName) match {
-      case None => Future.successful(BadRequest(s"the feature flag `$flagName` does not exist`"))
-      case _    =>
+      case None                             => Future.successful(BadRequest(s"the feature flag `$flagName` does not exist."))
+      case Some(toggle) if !toggle.isRemote =>
+        Future.successful(
+          BadRequest(
+            s"the feature flag `$flagName` cannot be set remotely. Edit appication.conf or override the value in app-config-*."
+          )
+        )
+      case _                                =>
         request.body.asJson match {
           case Some(JsBoolean(enabled)) =>
             featureFlagService
@@ -59,16 +65,22 @@ class FeatureFlagsAdminController @Inject() (
 
   def putAll: Action[AnyContent] = auth().async { request =>
     request.body.asJson.fold(Future.successful(BadRequest("Request body was invalid"))) { json =>
-      val featureFlagsRequest = json
-        .as[Seq[FeatureFlagSerialised]]
+      val featureFlagsRequest = json.as[Seq[FeatureFlagSerialised]]
 
       featureFlagsRequest
         .partitionMap { featureFlag =>
           featureFlagsConfig.get(featureFlag.name).toRight(featureFlag.name)
         } match {
-        case (errors, _) if errors.nonEmpty =>
-          Future.successful(BadRequest(s"The feature flag(s) ${errors.mkString(",")} do not exist"))
-        case _                              =>
+        case (errors, _) if errors.nonEmpty                  =>
+          Future.successful(BadRequest(s"The feature flag(s) ${errors.mkString(", ")} do not exist."))
+        case (_, flags) if flags.exists(_.isRemote == false) =>
+          val errors = flags.filter(_.isRemote == false).map(_.name)
+          Future.successful(
+            BadRequest(
+              s"the feature flag(s) `${errors.mkString(", ")}` cannot be set remotely. Edit appication.conf or override the value in app-config-*."
+            )
+          )
+        case _                                               =>
           featureFlagService.setAll(featureFlagsRequest.toSet).map(_ => NoContent)
       }
     }

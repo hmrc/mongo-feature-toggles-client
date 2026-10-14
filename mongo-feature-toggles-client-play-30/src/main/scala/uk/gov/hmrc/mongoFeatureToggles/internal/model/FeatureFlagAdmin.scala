@@ -26,11 +26,13 @@ private[mongoFeatureToggles] object FeatureFlagAdmin {
 
   def writesToThirdParties: Writes[FeatureFlagAdmin] = Writes[FeatureFlagAdmin] { featureFlag =>
     Json.obj(
-      "name"        -> featureFlag.definition.name,
-      "description" -> featureFlag.definition.description,
-      "isEnabled"   -> featureFlag.isEnabled,
-      "source"      -> (if (featureFlag.definition.isRemote) { "remote" }
-                   else { "local" })
+      "name"      -> Json.obj(
+        "name"        -> featureFlag.definition.name,
+        "description" -> featureFlag.definition.description,
+        "source"      -> (if (featureFlag.definition.isRemote) { "remote" }
+                     else { "local" })
+      ),
+      "isEnabled" -> featureFlag.isEnabled
     )
   }
 }

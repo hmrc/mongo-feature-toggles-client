@@ -34,10 +34,10 @@ class FeatureFlagsTestOnlyController @Inject() (
 
   def setFlag(featureFlagName: String, isEnabled: Boolean): Action[AnyContent] = Action.async {
     featureFlagsConfig.get(featureFlagName) match {
-      case None => Future.successful(BadRequest(s"the feature flag `$featureFlagName` does not exist`"))
+      case None    => Future.successful(BadRequest(s"the feature flag `$featureFlagName` does not exist`"))
       case Some(_) =>
         featureFlagService.set(featureFlagName, isEnabled).map {
-          case true => Ok(s"Flag $featureFlagName set to $isEnabled")
+          case true  => Ok(s"Flag $featureFlagName set to $isEnabled")
           case false => InternalServerError(s"Error while setting flag $featureFlagName to $isEnabled")
         }
     }

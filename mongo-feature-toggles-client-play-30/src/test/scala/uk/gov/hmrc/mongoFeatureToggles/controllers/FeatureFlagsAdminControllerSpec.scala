@@ -27,7 +27,7 @@ import play.api.inject.bind
 import play.api.libs.json.{JsBoolean, Json, Writes}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{contentAsString, defaultAwaitTimeout, status}
+import play.api.test.Helpers.{contentAsJson, contentAsString, defaultAwaitTimeout, status}
 import uk.gov.hmrc.internalauth.client.Predicate.Permission
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.mongo.MongoComponent
@@ -53,6 +53,12 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
       description = Some("Description B"),
       localConfiguration = Some(LocalConfiguration(isEnabled = false))
     )
+  val featureFlagDefinitionC =
+    FeatureFlagDefinition(
+      "toggle-name-third",
+      description = Some("Description C"),
+      remoteConfiguration = Some(RemoteConfiguration(defaultStatus = false))
+    )
 
   private val extraConfigValues: Map[String, Any] = Map(
     "mongodb.uri"                                                                                            ->
@@ -70,7 +76,13 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
     s"mongo-feature-toggles-client.toggles.${featureFlagDefinitionB.name}.toggleSourceValue"                 ->
       (if (featureFlagDefinitionB.isRemote) "remote-configuration" else "local-configuration"),
     s"mongo-feature-toggles-client.toggles.${featureFlagDefinitionB.name}.local-configuration.isEnabled"     ->
-      featureFlagDefinitionB.localConfiguration.get.isEnabled
+      featureFlagDefinitionB.localConfiguration.get.isEnabled,
+    s"mongo-feature-toggles-client.toggles.${featureFlagDefinitionC.name}.description"                       ->
+      featureFlagDefinitionC.description.get,
+    s"mongo-feature-toggles-client.toggles.${featureFlagDefinitionC.name}.remote-configuration.defaultState" ->
+      featureFlagDefinitionC.remoteConfiguration.get.defaultStatus,
+    s"mongo-feature-toggles-client.toggles.${featureFlagDefinitionC.name}.toggleSourceValue"                 ->
+      (if (featureFlagDefinitionC.isRemote) "remote-configuration" else "local-configuration")
   )
 
   override implicit lazy val app: Application = localGuiceApplicationBuilder()
@@ -101,9 +113,14 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
 
       val result: Future[Result] = controller.get(request)
       status(result) mustBe OK
-      contentAsString(
+      contentAsJson(
         result
-      ) mustBe """[{"name":"toggle-name","description":"Description A","isEnabled":true,"source":"remote"},{"name":"toggle-name-second","description":"Description B","isEnabled":false,"source":"local"}]"""
+      ) mustBe
+        Json.parse("""[
+          |{"name":{"name":"toggle-name","description":"Description A","source":"remote"},"isEnabled":true},
+          |{"name":{"name":"toggle-name-second","description":"Description B","source":"local"},"isEnabled":false},
+          |{"name":{"name":"toggle-name-third","description":"Description C","source":"remote"},"isEnabled":false}
+          |]""".stripMargin)
     }
   }
 
@@ -162,13 +179,78 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
       when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
 
       val featureFlags =
-        List(FeatureFlagSerialised("toggle-name", true), FeatureFlagSerialised("toggle-name-second", true))
+        List(
+          FeatureFlagSerialised(featureFlagDefinitionA.name, true),
+          FeatureFlagSerialised(featureFlagDefinitionC.name, true)
+        )
       val request      = FakeRequest("GET", "/")
         .withHeaders(HeaderNames.AUTHORIZATION -> "1")
         .withJsonBody(Json.toJson(featureFlags))
 
       val result: Future[Result] = controller.putAll(request)
       status(result) mustBe NO_CONTENT
+      verify(mockStubBehaviour).stubAuth(
+        Some(
+          Permission(
+            resource = Resource(
+              resourceType = ResourceType("ddcn-live-admin-frontend"),
+              resourceLocation = ResourceLocation("*")
+            ),
+            action = IAAction("ADMIN")
+          )
+        ),
+        Retrieval.EmptyRetrieval
+      )
+    }
+
+    "returns bad request when a toggle is local" in {
+      when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
+
+      val featureFlags =
+        List(
+          FeatureFlagSerialised(featureFlagDefinitionA.name, true),
+          FeatureFlagSerialised(featureFlagDefinitionB.name, true)
+        )
+      val request      = FakeRequest("GET", "/")
+        .withHeaders(HeaderNames.AUTHORIZATION -> "1")
+        .withJsonBody(Json.toJson(featureFlags))
+
+      val result: Future[Result] = controller.putAll(request)
+      status(result) mustBe BAD_REQUEST
+      contentAsString(
+        result
+      ) mustBe "the feature flag(s) `toggle-name-second` cannot be set remotely. Edit appication.conf or override the value in app-config-*."
+      verify(mockStubBehaviour).stubAuth(
+        Some(
+          Permission(
+            resource = Resource(
+              resourceType = ResourceType("ddcn-live-admin-frontend"),
+              resourceLocation = ResourceLocation("*")
+            ),
+            action = IAAction("ADMIN")
+          )
+        ),
+        Retrieval.EmptyRetrieval
+      )
+    }
+
+    "returns bad request when a toggle does not exists" in {
+      when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
+
+      val featureFlags =
+        List(
+          FeatureFlagSerialised(featureFlagDefinitionA.name, true),
+          FeatureFlagSerialised("do-not-exist", true)
+        )
+      val request      = FakeRequest("GET", "/")
+        .withHeaders(HeaderNames.AUTHORIZATION -> "1")
+        .withJsonBody(Json.toJson(featureFlags))
+
+      val result: Future[Result] = controller.putAll(request)
+      status(result) mustBe BAD_REQUEST
+      contentAsString(
+        result
+      ) mustBe "The feature flag(s) do-not-exist do not exist."
       verify(mockStubBehaviour).stubAuth(
         Some(
           Permission(
