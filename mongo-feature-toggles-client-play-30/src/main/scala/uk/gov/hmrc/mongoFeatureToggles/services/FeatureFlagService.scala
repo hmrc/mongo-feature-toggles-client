@@ -82,28 +82,37 @@ class FeatureFlagService @Inject() (
       val mongoByName  = featureFlagsInMongo.map(flag => flag.name -> flag).toMap
       val configByName = featureFlagsFromConfig.map(flag => flag.name -> flag).toMap
 
-      val intersect              =
-        featureFlagsFromConfig.filter(flag => mongoByName.contains(flag.name))
-      val featureFlagsNotInMongo =
-        featureFlagsFromConfig.filterNot(flag => mongoByName.contains(flag.name))
-      val deletedFeatureFlags    =
+      val remoteWithNoConfig = // to be deleted
         featureFlagsInMongo.filterNot(flag => configByName.contains(flag.name))
 
-      deletedFeatureFlags.foreach { flag =>
+      val remoteWithRemoteConfig =
+        featureFlagsFromConfig.filter(fromConfig => fromConfig.isRemote && mongoByName.contains(fromConfig.name))
+
+      val remoteWithLocalConfig = // to be deleted
+        featureFlagsInMongo.filter(flag =>
+          configByName.contains(flag.name) && !configByName.get(flag.name).fold(true)(_.isRemote)
+        )
+
+      val local = featureFlagsFromConfig.filterNot(_.isRemote)
+
+      val remoteNotYetInMongo =
+        featureFlagsFromConfig.filter(fromConfig => fromConfig.isRemote && !mongoByName.contains(fromConfig.name))
+
+      val toBeDeleted = remoteWithNoConfig ++ remoteWithLocalConfig
+
+      toBeDeleted.foreach { flag =>
         featureFlagRepository.deleteFeatureFlag(flag).map {
           case true  => logger.warn(s"Flag `${flag.name}` has been deleted from Mongo")
           case false => logger.error(s"Flag `${flag.name}` could not be deleted from Mongo")
         }
       }
 
-      intersect.map { flag =>
-        if (flag.isRemote) {
-          FeatureFlagAdmin(flag, mongoByName(flag.name).isEnabled)
-        } else {
-          FeatureFlagAdmin(flag, flag.localConfiguration.fold(false)(_.isEnabled))
-        }
-      } ++ featureFlagsNotInMongo.map { flag =>
+      remoteWithRemoteConfig.map { flag =>
+        FeatureFlagAdmin(flag, mongoByName(flag.name).isEnabled)
+      } ++ remoteNotYetInMongo.map { flag =>
         FeatureFlagAdmin(flag, flag.remoteConfiguration.fold(false)(_.defaultStatus))
+      } ++ local.map { flag =>
+        FeatureFlagAdmin(flag, flag.localConfiguration.fold(false)(_.isEnabled))
       }
     }
   }

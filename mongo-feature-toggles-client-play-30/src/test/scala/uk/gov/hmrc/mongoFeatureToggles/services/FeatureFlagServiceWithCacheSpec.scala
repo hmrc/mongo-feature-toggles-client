@@ -93,7 +93,7 @@ class FeatureFlagServiceWithCacheSpec extends BaseSpec {
               None,
               Some(LocalConfiguration(isEnabled = true))
             ),
-            false
+            true
           )
         )
 

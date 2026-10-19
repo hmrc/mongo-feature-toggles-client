@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.mongoFeatureToggles.controllers
 
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito.{reset, verify, when}
 import org.scalatest.AppendedClues.convertToClueful
 import play.api.Application
@@ -35,6 +35,7 @@ import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.mongoFeatureToggles.internal.model.{FeatureFlagAdmin, FeatureFlagDefinition, FeatureFlagSerialised, LocalConfiguration, RemoteConfiguration}
 import uk.gov.hmrc.mongoFeatureToggles.internal.repository.FeatureFlagRepository
+import uk.gov.hmrc.mongoFeatureToggles.services.FeatureFlagService
 import uk.gov.hmrc.mongoFeatureToggles.testUtils.BaseSpec
 
 import scala.concurrent.Future
@@ -45,7 +46,7 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
     FeatureFlagDefinition(
       "toggle-name",
       description = Some("Description A"),
-      remoteConfiguration = Some(RemoteConfiguration(defaultStatus = true))
+      remoteConfiguration = Some(RemoteConfiguration(defaultStatus = false))
     )
   val featureFlagDefinitionB =
     FeatureFlagDefinition(
@@ -59,6 +60,8 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
       description = Some("Description C"),
       remoteConfiguration = Some(RemoteConfiguration(defaultStatus = false))
     )
+
+  lazy val mockFeatureFlagService = mock[FeatureFlagService]
 
   private val extraConfigValues: Map[String, Any] = Map(
     "mongodb.uri"                                                                                            ->
@@ -90,7 +93,8 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
       extraConfigValues ++ configValues
     )
     .overrides(
-      bind[MongoComponent].toInstance(mongoComponent)
+      bind[MongoComponent].toInstance(mongoComponent),
+      bind[FeatureFlagService].toInstance(mockFeatureFlagService)
     )
     .build()
 
@@ -104,11 +108,21 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockStubBehaviour)
+    reset(mockStubBehaviour, mockFeatureFlagService)
   }
 
   "getAll" must {
     "get all the flags" in {
+      when(mockFeatureFlagService.getAll).thenReturn(
+        Future.successful(
+          Set(
+            FeatureFlagAdmin(featureFlagDefinitionA, true),
+            FeatureFlagAdmin(featureFlagDefinitionB, true),
+            FeatureFlagAdmin(featureFlagDefinitionC, true)
+          )
+        )
+      )
+
       val request = FakeRequest("GET", "/")
 
       val result: Future[Result] = controller.get(request)
@@ -118,8 +132,8 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
       ) mustBe
         Json.parse("""[
           |{"name":{"name":"toggle-name","description":"Description A","source":"remote"},"isEnabled":true},
-          |{"name":{"name":"toggle-name-second","description":"Description B","source":"local"},"isEnabled":false},
-          |{"name":{"name":"toggle-name-third","description":"Description C","source":"remote"},"isEnabled":false}
+          |{"name":{"name":"toggle-name-second","description":"Description B","source":"local"},"isEnabled":true},
+          |{"name":{"name":"toggle-name-third","description":"Description C","source":"remote"},"isEnabled":true}
           |]""".stripMargin)
     }
   }
@@ -127,6 +141,10 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
   "put" must {
     "set the flag status" in {
       when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
+
+      when(mockFeatureFlagService.set(eqTo(featureFlagDefinitionA.name), eqTo(true))).thenReturn(
+        Future.successful(true)
+      )
 
       val request = FakeRequest("GET", "/")
         .withHeaders(HeaderNames.AUTHORIZATION -> "1")
@@ -176,14 +194,18 @@ class FeatureFlagsAdminControllerSpec extends BaseSpec with DefaultPlayMongoRepo
 
   "putAll" must {
     "set multiple flags statuses" in {
-      when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
-
       val featureFlags =
         List(
           FeatureFlagSerialised(featureFlagDefinitionA.name, true),
           FeatureFlagSerialised(featureFlagDefinitionC.name, true)
         )
-      val request      = FakeRequest("GET", "/")
+
+      when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
+      when(mockFeatureFlagService.setAll(eqTo(featureFlags.toSet))).thenReturn(
+        Future.unit
+      )
+
+      val request = FakeRequest("GET", "/")
         .withHeaders(HeaderNames.AUTHORIZATION -> "1")
         .withJsonBody(Json.toJson(featureFlags))
 
