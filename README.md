@@ -29,45 +29,45 @@ play.modules.enabled += "uk.gov.hmrc.play.bootstrap.HttpClientV2Module"
 ```
 
 ### Mongo transactions override
-If the the configuration `mongo-feature-toggles-client.useMongoTransactions = false` is used then the client won't use Mongo transactions. Do not override this in any environment. It is best suited while the service is started via service manager.
+If the configuration `mongo-feature-toggles-client.useMongoTransactions = false` is used then the client won't use Mongo transactions. Do not override this in any environment. It is best suited while the service is started via service manager.
 
 ### Create a toggle
-Create a case object extending the FeatureFlagName trait.
+Write the toggle definition in application.conf. The value of the toggle can be either sourced from Mongo or from application.conf.
+toggleSourceValue decide which type of source to use.
 
-The lockedEnvironments allows to move the toggle per environment in a different part of the UI where their use is restricted.
+```hocon
+mongo-feature-toggles-client {
+  toggles {
+    show-taxcalc-tile-toggle { # name of the toggle (1)
+      description = "Toggle the display of the Payments and Repayments tile (NPS/ETMP data) on the home page"
 
-```scala
-case object PertaxBackendToggle extends FeatureFlagName {
-    override val description = Some("Description")
-    override val name = "toggle-name"
-    override val defaultState = false // State of the toggle when no entry is present in Mongo
-    override val lockedEnvironments = Seq(Environment.Production) // Locked toggled are placed in a different part of the UI
-  }
-```
+      # Determines where the feature toggle state is sourced from.
+      # Allowed values:
+      #   - "remote-configuration" -> use remote-configuration
+      #   - "local-configuration"  -> use local-configuration
+      toggleSourceValue = "remote-configuration"
 
-### Register toggles on application start
-Call the `addFlags` method from the `FeatureFlagNamesLibrary`. Add the class to a module and add the module to application.conf so it gets executed at startup.
+      # Configuration used when toggleSourceValue is set to "remote-configuration".
+      # The defaultState is used when no value is available yet from the remote repository.
+      remote-configuration {
+        defaultState = true
+      }
 
-```scala
-@Singleton
-class ApplicationStartUp {
-  FeatureFlagNamesLibrary.addFlags(List(PertaxBackendToggle))
+      # Configuration used when toggleSourceValue is set to "local-configuration".
+      # The isEnabled value is read directly from this config file.
+      local-configuration {
+        isEnabled = true
+      }
+
+    }
 }
 ```
 
-```scala
-class HmrcModule extends Module {
-  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = Seq(
-    bind[ApplicationStartUp].toSelf.eagerly()
-  )
-}
-```
-
-```text
-play.modules.enabled += "config.HmrcModule"
-```
+In the code create an object extending `FeatureFlagName` with the name equal to the key(1) used to define the toggle.
 
 ### Add the additional admin routes in admin.routes
+The routes will allow the admin frontend to operate the toggles configured remotely.
+
 ```text
 -> /featureFlags mongoFeatureTogglesAdmin.Routes
 ```
@@ -77,32 +77,33 @@ if admin.routes does not exist, add an entry in prod.routes
 ```
 
 ### Add the additional test-only routes in testOnlyDoNotUseInAppConf.routes
+The testOnly routes make it easier to change the toggles from the acceptance tests.
+
 ```text
 -> /<rootPath> mongoFeatureTogglesTestOnly.Routes
 ```
 
 ### Read the state of a toggle
-Inject the `FeatureFlagService` service and use the `get` method
+Inject the `FeatureFlagService` service and use the `get` or `getAsEitherT` methods
 
 ```scala
-FeatureFlagService.get(PertaxBackendToggle)
+featureFlagService.get(AgentClientRelationshipsToggle).flatMap { toggle =>
+  if (toggle.isEnabled) {
+    // Do something when the toggle is enabled
+  } else {
+    // Do something when the toggle is disabled  
+  }
 ```
 
-### Write a new state of a toggle
-Inject the `FeatureFlagService` service and use the `set` method
+or
 
 ```scala
-FeatureFlagService.set(PertaxBackendToggle, true)
-```
-
-### Write the state of multiple toggles simultaneously
-Inject the `FeatureFlagService` service and use the `setAll` method
-
-```scala
-FeatureFlagService.set(Map(
-  PertaxBackendToggle -> true,
-  AnOtherToggle -> false
-))
+featureFlagService.getAsEitherT(AgentClientRelationshipsToggle).flatMap { toggle =>
+  if (toggle.isEnabled) {
+    // Do something when the toggle is enabled
+  } else {
+    // Do something when the toggle is disabled  
+  }
 ```
 
 ### License

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import BuildDependencies.{bootstrapVersion, hmrcMongoVersion, playVersion29, playVersion30}
+import BuildDependencies.{bootstrapVersion, hmrcMongoVersion, playVersion30}
 import sbt.Keys.*
 import sbt.*
 
@@ -27,16 +27,10 @@ val scala3    = "3.3.7"
 Global / concurrentRestrictions += Tags.limitSum(1, Tags.Test, Tags.Untagged)
 
 ThisBuild / scalaVersion       := scala3
-ThisBuild / majorVersion       := 2
+ThisBuild / majorVersion       := 3
 ThisBuild / isPublicArtefact   := true
 ThisBuild / organization := "uk.gov.hmrc"
 ThisBuild / scalafmtOnCompile := true
-ThisBuild / scalacOptions ++= Seq(
-  "-feature",
-  "-Xfatal-warnings",
-  "-Wconf:src=routes/.*:s",
-  "-Wconf:msg=Flag.*repeatedly:s",
-)
 
 lazy val projects: Seq[ProjectReference] = sys.env.get("PLAY_VERSION") match {
   case _ => Seq(play30, play30Test)
@@ -45,20 +39,6 @@ lazy val projects: Seq[ProjectReference] = sys.env.get("PLAY_VERSION") match {
 lazy val library = Project(libName, file("."))
   .settings(publish / skip := true)
   .aggregate(projects: _*)
-
-def copyPlay30Sources(module: Project) =
-  CopySources.copySources(
-    module,
-    transformSource   = _.replace("org.apache.pekko", "akka"),
-    transformResource = _.replace("pekko", "akka")
-  )
-
-def copyPlay30Routes(module: Project) = Seq(
-  Compile / routes / sources ++= {
-    val dirs = (module / Compile / unmanagedResourceDirectories).value
-    (dirs * "routes").get ++ (dirs * "*.routes").get
-  }
-)
 
 lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
   .enablePlugins(PlayScala)
@@ -71,7 +51,15 @@ lazy val play30 = Project(s"$libName-play-30", file(s"$libName-play-30"))
     Compile / routes / sources ++= {
       val dirs = (Compile / unmanagedResourceDirectories).value
       (dirs * "routes").get ++ (dirs * "*.routes").get
-    }
+    },
+    scalacOptions ++= Seq(
+      "-no-indent",
+      "-language:noAutoTupling",
+      "-Werror",
+      "-feature",
+      "-Wconf:src=routes/.*:s",
+      "-Wconf:msg=Flag.*repeatedly:s",
+    )
   )
 
 lazy val play30Test = Project(s"$libName-test-play-30", file(s"$libName-test-play-30"))
