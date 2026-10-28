@@ -28,7 +28,6 @@ import uk.gov.hmrc.mongoFeatureToggles.internal.model.{FeatureFlagAdmin, Feature
 import uk.gov.hmrc.mongoFeatureToggles.internal.model.FeatureFlagDefinition
 import uk.gov.hmrc.mdc.Mdc
 import org.mongodb.scala.ToSingleObservablePublisher
-import org.mongodb.scala.bson.BsonDocument
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,17 +49,7 @@ private[mongoFeatureToggles] class FeatureFlagRepository @Inject() (
             .name("name")
             .unique(true)
         )
-      ),
-      optSchema = Some(BsonDocument("""
-          { bsonType: "object"
-          , required: [ "_id", "name", "isEnabled" ]
-          , properties:
-            { _id       : { bsonType: "objectId" }
-            , name      : { bsonType: "string" }
-            , isEnabled : { bsonType: "bool" }
-            }
-          }
-        """))
+      )
     )
     with Transactions
     with Logging {
